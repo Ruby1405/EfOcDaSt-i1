@@ -89,7 +89,7 @@ int main ()
 		// Move seeds and bounce off walls
 		for (sint16 i = 0; i < SEED_COUNT; i++)
 		{
-			seeds[i] = Vector2Add(seeds[i], seedVels[i]);
+			seeds[i] = Vector2Add(seeds[i], Vector2Scale(seedVels[i], GetFrameTime()));
 
 			seedVels[i].x = (
 				(-seedVels[i].x * (0 > seeds[i].x || BOARD_WIDTH <= seeds[i].x)) +
