@@ -54,12 +54,38 @@ int main ()
 		BeginDrawing();
 		ClearBackground(BLACK);
 
+		// Pixel by pixel draw voronoi
+		for (uint16 y = 0; y < BOARD_HEIGHT; y++)
+		{
+			for (uint16 x = 0; x < BOARD_WIDTH; x++)
+			{
+				uint16 closestSeed = 0;
+				uint16 closestDist = BOARD_WIDTH + BOARD_HEIGHT;
+				for (uint16 i = 0; i < SEED_COUNT; i++)
+				{
+					uint16 distX = (uint16)abs((sint16)x - (sint16)seeds[i].x);
+					uint16 distY = (uint16)abs((sint16)y - (sint16)seeds[i].y);
+					uint16 dist = distX + distY;
+					if (dist < closestDist)
+					{
+						closestDist = dist;
+						closestSeed = i;
+					}
+				}
+				float hue = (float)closestSeed / (float)SEED_COUNT;
+				Color col = ColorFromHSV(hue * 360.0f, 1.0f, 1.0f);
+				col.a = 100;
+				DrawPixel(x, y, col);
+			}
+		}
+
 		for (sint16 i = 0; i < SEED_COUNT; i++)
 		{
 			DrawCircleV(seeds[i], 2.0, WHITE);
 		}
 		
-		
+		DrawFPS(10, 10);
+
 		EndDrawing();
 
 		// Move seeds and bounce off walls
