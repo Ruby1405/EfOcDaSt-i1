@@ -60,12 +60,10 @@ int main ()
 			for (uint16 x = 0; x < BOARD_WIDTH; x++)
 			{
 				uint16 closestSeed = 0;
-				uint16 closestDist = BOARD_WIDTH + BOARD_HEIGHT;
+				float closestDist = (BOARD_WIDTH + BOARD_HEIGHT) * (BOARD_WIDTH + BOARD_HEIGHT);
 				for (uint16 i = 0; i < SEED_COUNT; i++)
 				{
-					uint16 distX = (uint16)abs((sint16)x - (sint16)seeds[i].x);
-					uint16 distY = (uint16)abs((sint16)y - (sint16)seeds[i].y);
-					uint16 dist = distX + distY;
+					float dist = Vector2DistanceSqr((Vector2){ (float)x, (float)y }, seeds[i]);
 					if (dist < closestDist)
 					{
 						closestDist = dist;
