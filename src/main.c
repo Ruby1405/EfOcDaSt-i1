@@ -7,6 +7,8 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 
 */
 
+#include <stdlib.h>     
+
 #include "raylib.h"
 #include "raymath.h"
 
@@ -16,6 +18,14 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 #define uint32 unsigned int
 #define sint16 short
 #define sint32 int
+
+typedef struct Disector
+{
+	uint16 seedA;
+	uint16 seedB;
+	Vector2 pointA;
+	Vector2 pointB;
+} Disector;
 
 int main ()
 {
@@ -35,19 +45,24 @@ int main ()
 	// Texture wabbit = LoadTexture("wabbit_alpha.png");
 
 	// ----------- my stuff ------------
-	const sint16 SEED_COUNT = 20;
+	const uint16 SEED_COUNT = 20;
 	Vector2 seeds[SEED_COUNT];
-	for (sint16 i = 0; i < SEED_COUNT; i++)
+	for (uint16 i = 0; i < SEED_COUNT; i++)
 	{
 		seeds[i].x = (float)(GetRandomValue(0, 1980));
 		seeds[i].y = (float)(GetRandomValue(0, 1020));
 	}
 	Vector2 seedVels[SEED_COUNT];
-	for (sint16 i = 0; i < SEED_COUNT; i++)
+	for (uint16 i = 0; i < SEED_COUNT; i++)
 	{
 		seedVels[i].x = (float)(GetRandomValue(-2, 2));
 		seedVels[i].y = (float)(GetRandomValue(-2, 2));
 	}
+
+	const uint16 DISECTORS_CAP_INIT = SEED_COUNT * 2;
+	uint16 disectorsCap = DISECTORS_CAP_INIT;
+	uint16 disectorsCount = 0;
+	Disector *disectors = (Disector *)malloc(sizeof(Disector) * DISECTORS_CAP_INIT);
 	
 	while (!WindowShouldClose())
 	{	
@@ -55,29 +70,42 @@ int main ()
 		ClearBackground(BLACK);
 
 		// Pixel by pixel draw voronoi
-		for (uint16 y = 0; y < BOARD_HEIGHT; y++)
-		{
-			for (uint16 x = 0; x < BOARD_WIDTH; x++)
-			{
-				uint16 closestSeed = 0;
-				float closestDist = (BOARD_WIDTH + BOARD_HEIGHT) * (BOARD_WIDTH + BOARD_HEIGHT);
-				for (uint16 i = 0; i < SEED_COUNT; i++)
-				{
-					float dist = Vector2DistanceSqr((Vector2){ (float)x, (float)y }, seeds[i]);
-					if (dist < closestDist)
-					{
-						closestDist = dist;
-						closestSeed = i;
-					}
-				}
-				float hue = (float)closestSeed / (float)SEED_COUNT;
-				Color col = ColorFromHSV(hue * 360.0f, 1.0f, 1.0f);
-				col.a = 100;
-				DrawPixel(x, y, col);
-			}
-		}
+		// for (uint16 y = 0; y < BOARD_HEIGHT; y++)
+		// {
+		// 	for (uint16 x = 0; x < BOARD_WIDTH; x++)
+		// 	{
+		// 		uint16 closestSeed = 0;
+		// 		float closestDist = (BOARD_WIDTH + BOARD_HEIGHT) * (BOARD_WIDTH + BOARD_HEIGHT);
+		// 		for (uint16 i = 0; i < SEED_COUNT; i++)
+		// 		{
+		// 			float dist = Vector2DistanceSqr((Vector2){ (float)x, (float)y }, seeds[i]);
+		// 			if (dist < closestDist)
+		// 			{
+		// 				closestDist = dist;
+		// 				closestSeed = i;
+		// 			}
+		// 		}
+		// 		float hue = (float)closestSeed / (float)SEED_COUNT;
+		// 		Color col = ColorFromHSV(hue * 360.0f, 1.0f, 1.0f);
+		// 		col.a = 100;
+		// 		DrawPixel(x, y, col);
+		// 	}
+		// }
 
-		for (sint16 i = 0; i < SEED_COUNT; i++)
+
+		for (uint16 i = SEED_COUNT - 1; i > 0; i--)
+		{
+			uint16 ii = i - 1;
+			do
+			{
+				DrawLineV(seeds[i], seeds[ii], WHITE);
+			}
+			while (ii-- > 0);
+		}
+		
+		
+		// Draw seeds
+		for (uint16 i = 0; i < SEED_COUNT; i++)
 		{
 			DrawCircleV(seeds[i], 2.0, WHITE);
 		}
@@ -87,9 +115,9 @@ int main ()
 		EndDrawing();
 
 		// Move seeds and bounce off walls
-		for (sint16 i = 0; i < SEED_COUNT; i++)
+		for (uint16 i = 0; i < SEED_COUNT; i++)
 		{
-			seeds[i] = Vector2Add(seeds[i], Vector2Scale(seedVels[i], GetFrameTime()));
+			seeds[i] = Vector2Add(seeds[i], Vector2Scale(seedVels[i], GetFrameTime() * 20));
 
 			seedVels[i].x = (
 				(-seedVels[i].x * (0 > seeds[i].x || BOARD_WIDTH <= seeds[i].x)) +
