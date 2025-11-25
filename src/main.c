@@ -63,6 +63,15 @@ int main ()
 	uint16 disectorsCap = DISECTORS_CAP_INIT;
 	uint16 disectorsCount = 0;
 	Disector *disectors = (Disector *)malloc(sizeof(Disector) * DISECTORS_CAP_INIT);
+
+	const uint16 POLYGON_CAP_INIT = 8;
+	typedef struct Polygon
+	{
+		uint16 pointsCap;
+		uint16 pointsCount;
+		Vector2 *points;
+	} Polygon;
+	Polygon polygons[SEED_COUNT];
 	
 	while (!WindowShouldClose())
 	{	
@@ -92,6 +101,19 @@ int main ()
 		// 	}
 		// }
 
+		// Draw all disectors
+		// for (uint16 i = SEED_COUNT - 1; i > 0; i--)
+		// {
+		// 	uint16 ii = i - 1;
+		// 	do
+		// 	{
+		// 		Vector2 disectV = {seeds[i].y - seeds[ii].y, - seeds[i].y - seeds[ii].y};
+		// 		Vector2 disectP = Vector2Scale(Vector2Add(seeds[i],seeds[ii]),0.5f);
+		// 		// DrawLineV(seeds[i], seeds[ii], WHITE);
+		// 		DrawLineV(Vector2Subtract(disectP,disectV),Vector2Add(disectP, disectV), WHITE);
+		// 	}
+		// 	while (ii-- > 0);
+		// }
 
 		for (uint16 i = SEED_COUNT - 1; i > 0; i--)
 		{
