@@ -32,11 +32,11 @@ int main ()
 	// Tell the window to use vsync and work on high DPI displays
 	SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
 
-	const uint16 BOARD_WIDTH = 1980;
-	const uint16 BOARD_HEIGHT = 1020;
+	const uint16 BOARD_WIDTH = 1000;
+	const uint16 BOARD_HEIGHT = 1000;
 
 	InitWindow(BOARD_WIDTH, BOARD_HEIGHT, "Voronoi");
-	ToggleFullscreen();
+	// ToggleFullscreen();
 
 	// // Utility function from resource_dir.h to find the resources folder and set it as the current working directory so we can load from it
 	// SearchAndSetResourceDir("resources");
@@ -49,8 +49,8 @@ int main ()
 	Vector2 seeds[SEED_COUNT];
 	for (uint16 i = 0; i < SEED_COUNT; i++)
 	{
-		seeds[i].x = (float)(GetRandomValue(0, 1980));
-		seeds[i].y = (float)(GetRandomValue(0, 1020));
+		seeds[i].x = (float)(GetRandomValue(0, BOARD_WIDTH));
+		seeds[i].y = (float)(GetRandomValue(0, BOARD_HEIGHT));
 	}
 	Vector2 seedVels[SEED_COUNT];
 	for (uint16 i = 0; i < SEED_COUNT; i++)
@@ -70,6 +70,9 @@ int main ()
 	{
 		PolygonInit(&polygons[i]);
 	}
+
+	Polygon workagon;
+	PolygonInit(&workagon);
 	
 	while (!WindowShouldClose())
 	{	
@@ -128,11 +131,78 @@ int main ()
 
 		// Polygon construction attempt
 
-		// PolygonClear(&polygons[0]);
+		PolygonClear(&polygons[0]);
 		// PolygonAddPoint(&polygons[0], (Vector2){0,0});
 		// PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH,0});
 		// PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH,(float)BOARD_HEIGHT});
 		// PolygonAddPoint(&polygons[0], (Vector2){0,(float)BOARD_HEIGHT});
+
+		PolygonAddPoint(&polygons[0], (Vector2){3,3});
+		PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH - 3, 3});
+		PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH - 3,(float)BOARD_HEIGHT - 3});
+		PolygonAddPoint(&polygons[0], (Vector2){3,(float)BOARD_HEIGHT - 3});
+
+		Vector2 midpoint = Vector2Scale(Vector2Add(seeds[0], seeds[1]), 0.5f);
+		Vector2 disectV = {seeds[0].y - seeds[1].y, - seeds[0].x + seeds[1].x};
+		DrawLineV(midpoint, Vector2Add(midpoint, disectV), RED);
+
+		sint16 cutStart = -1;
+		sint16 cutEnd = -1;
+		Vector2 intersects[2];
+		for (uint16 i = 0; i < polygons[0].pointsCount; i++)
+		{
+			Vector2 v0 = polygons[0].points[i];
+			Vector2 v1 = polygons[0].points[(i + 1) % polygons[0].pointsCount];
+			Vector2 intersect;
+			if (CollisionLineLinePV(midpoint, disectV, v0, Vector2Subtract(v1, v0), &intersect))
+			{
+				if (cutStart == -1)
+				{
+					intersects[0] = intersect;
+					cutStart = (i + 1) % polygons[0].pointsCount;
+				}
+				else
+				{
+					intersects[1] = intersect;
+					cutEnd = (i + 1) % polygons[0].pointsCount;
+					break;
+				}
+			}
+		}
+
+		if (cutStart != -1 && cutEnd != -1)
+		{
+			PolygonClear(&workagon);
+			for (uint16 i = cutStart; i != cutEnd; i++)
+			{
+				PolygonAddPoint(&workagon, polygons[0].points[i]);
+			}
+			
+			if (CheckCollisionPointPoly(seeds[0], workagon.points, workagon.pointsCount))
+			{
+				PolygonClear(&polygons[0]);
+				for (uint16 i = 0; i < workagon.pointsCount; i = (i + 1) % workagon.pointsCount)
+				{
+					PolygonAddPoint(&polygons[0], workagon.points[i]);
+				}
+			}
+			else
+			{
+				PolygonClear(&polygons[0]);
+				PolygonAddPoint(&polygons[0], intersects[0]);
+				for (uint16 i = cutEnd; i != cutStart; i = (i + 1) % workagon.pointsCount)
+				{
+					printf("%d\n", i);
+					PolygonAddPoint(&polygons[0], workagon.points[i]);
+				}
+				PolygonAddPoint(&polygons[0], intersects[1]);
+			}
+		}
+		else if (cutStart != cutEnd)
+		{
+			// something went wrong
+		}
+
 
 		// for (uint16 i = 1; i < SEED_COUNT; i++)
 		// {
@@ -140,50 +210,32 @@ int main ()
 
 			
 		// }
+
+		PolygonDrawLines(&polygons[0], WHITE);
 		
-		Vector2 a, b, c, d;
-		a = seeds[0];
-		b = seeds[1];
-		c = seeds[2];
-		d = seeds[3];
+		// Line-line collision test
+		// Vector2 a, b, c, d;
+		// a = seeds[0];
+		// b = seeds[1];
+		// c = seeds[2];
+		// d = seeds[3];
 
-		Vector2 intersect;
-		uint16 found = CollisionLineLinePP(a, b, c, d, &intersect);
-		if (found)
-		{
-			DrawCircleV(intersect, 5.0, GREEN);
-		}
-		else
-		{
-			DrawCircleV((Vector2){1000,1000}, 5.0, RED);
-		}
-		DrawText(TextFormat("Found: %d", found), 10, 30, 20, WHITE);
+		// DrawLineV(a, b, WHITE);
+		// DrawLineV(c, d, WHITE);
 
-		Vector2 aA = a;
-		Vector2 aB = b;
-		Vector2 bA = c;
-		Vector2 bB = d;
-
-		Vector2 aV = Vector2Subtract(aB, aA);
-    	Vector2 bV = Vector2Subtract(bB, bA);
-
-		Vector2 aP = aA;
-		Vector2 bP = bA;
-
-		float t = Vector2CrossProduct(Vector2Subtract(bP, aP), bV) / Vector2CrossProduct(aV, bV);
-    	Vector2 inter = Vector2Add(aP, Vector2Scale(aV, t));
-
-		DrawText(TextFormat("t: %f", t), 10, 60, 20, WHITE);
-		DrawText(TextFormat("ix: %f", inter.x), 10, 90, 20, WHITE);
-		DrawText(TextFormat("iy: %f", inter.y), 10, 120, 20, WHITE);
-		DrawLineV(a, b, WHITE);
-		DrawLineV(c, d, WHITE);
+		// Vector2 intersect;
 		
-		// // Draw seeds
-		// for (uint16 i = 0; i < SEED_COUNT; i++)
+		// if (CollisionLineLinePP(a, b, c, d, &intersect))
 		// {
-		// 	DrawCircleV(seeds[i], 2.0, WHITE);
+		// 	DrawCircleV(intersect, 10.0, RED);
 		// }
+		
+		
+		// Draw seeds
+		for (uint16 i = 0; i < 2; i++)
+		{
+			DrawCircleV(seeds[i], 2.0, WHITE);
+		}
 		
 		DrawFPS(10, 10);
 

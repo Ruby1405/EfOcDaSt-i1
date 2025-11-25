@@ -20,29 +20,6 @@ uint16 CollisionLineLinePV(Vector2 aP, Vector2 aV, Vector2 bP, Vector2 bV, Vecto
     float dot = Vector2DotProduct(aV, bV);
     if (dot == 1 || dot == -1) return 0; // parallel lines
 
-    // Find intersection point
-
-    // # The intersection point of the example below should be (0,0)
-
-    // # Vertices for the first line
-    // p1_start    = np.asarray([-5,   0])
-    // p1_end      = np.asarray([-3,   0])
-
-    // # Vertices for the second line
-    // p2_start    = np.asarray([0,    4])
-    // p2_end      = np.asarray([0,    2])
-
-    // p       = p1_start
-    // r       = (p1_end-p1_start)
-
-    // q       = p2_start
-    // s       = (p2_end-p2_start)
-
-    // t       = np.cross(q - p,s)/(np.cross(r,s))
-
-    // # This is the intersection point
-    // i       = p + t*r
-
     float t = Vector2CrossProduct(Vector2Subtract(bP, aP), bV) / Vector2CrossProduct(aV, bV);
     *intersect = Vector2Add(aP, Vector2Scale(aV, t));
 
@@ -54,6 +31,30 @@ uint16 CollisionLineLinePP(Vector2 aA, Vector2 aB, Vector2 bA, Vector2 bB, Vecto
     Vector2 aV = Vector2Subtract(aB, aA);
     Vector2 bV = Vector2Subtract(bB, bA);
     return CollisionLineLinePV(aA, aV, bA, bV, intersect);
+}
+
+uint16 CollisionLineLineSegmentVPPP(Vector2 aP, Vector2 aV, Vector2 bA, Vector2 bB, Vector2 *intersect)
+{
+    // Broad phase unsegmented line check
+    Vector2 broadIntersect;
+    if (!CollisionLineLinePV(aP, aV, bA, Vector2Subtract(bB, bA), &broadIntersect))
+    {
+        return 0;
+    }
+
+    // Narrow phase check to see if the intersection is within the line segment
+    if (
+        (broadIntersect.x < (bA.x * (bA.x <= bB.x)) + (bB.x * (bB.x < bA.x))) ||
+        (broadIntersect.x > (bA.x * (bA.x >= bB.x)) + (bB.x * (bB.x > bA.x))) ||
+        (broadIntersect.y < (bA.y * (bA.y <= bB.y)) + (bB.y * (bB.y < bA.y))) ||
+        (broadIntersect.y > (bA.y * (bA.y >= bB.y)) + (bB.y * (bB.y > bA.y)))
+    )
+    {
+        return 0;
+    }
+
+    *intersect = broadIntersect;
+    return 1;
 }
 
 uint16 CollisionRayLine(Vector2 rayOrigin, Vector2 rayDirection, Vector2 lineA, Vector2 lineB, Vector2 *intersect)

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "raylib.h"
 
@@ -20,13 +21,14 @@ void PolygonInit(Polygon *poly)
     return;
 }
 
-inline void PolygonAddPoint(Polygon *poly, Vector2 point)
+void PolygonAddPoint(Polygon *poly, Vector2 point)
 {
 	if (poly->pointsCount >= poly->pointsCap)
 	{
 		poly->pointsCap *= 2;
 		poly->points = (Vector2 *)realloc(poly->points, sizeof(Vector2) * poly->pointsCap);
 	}
+    printf("Adding point (%f, %f) at index %d\n", point.x, point.y, poly->pointsCount);
 	poly->points[poly->pointsCount++] = point;
 	return;
 }
@@ -59,5 +61,16 @@ void PolygonFree(Polygon *poly)
     poly->points = NULL;
     poly->pointsCap = 0;
     poly->pointsCount = 0;
+    return;
+}
+
+void PolygonDrawLines(Polygon *poly, Color col)
+{
+    for (uint16 i = 0; i < poly->pointsCount; i++)
+    {
+        Vector2 a = poly->points[i];
+        Vector2 b = poly->points[(i + 1) % poly->pointsCount];
+        DrawLineV(a, b, col);
+    }
     return;
 }
