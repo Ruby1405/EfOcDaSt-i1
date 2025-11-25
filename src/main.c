@@ -8,6 +8,7 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 */
 
 #include <stdlib.h>     
+#include <stdio.h>
 
 #include "raylib.h"
 #include "raymath.h"
@@ -138,81 +139,81 @@ int main ()
 		// PolygonAddPoint(&polygons[0], (Vector2){0,(float)BOARD_HEIGHT});
 
 		PolygonAddPoint(&polygons[0], (Vector2){3,3});
-		PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH - 3, 3});
-		PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH - 3,(float)BOARD_HEIGHT - 3});
 		PolygonAddPoint(&polygons[0], (Vector2){3,(float)BOARD_HEIGHT - 3});
+		PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH - 3,(float)BOARD_HEIGHT - 3});
+		PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH - 3, 3});
 
 		Vector2 midpoint = Vector2Scale(Vector2Add(seeds[0], seeds[1]), 0.5f);
 		Vector2 disectV = {seeds[0].y - seeds[1].y, - seeds[0].x + seeds[1].x};
-		DrawLineV(midpoint, Vector2Add(midpoint, disectV), RED);
 
-		sint16 cutStart = -1;
-		sint16 cutEnd = -1;
-		Vector2 intersects[2];
+		uint16 stage = 0;
 		for (uint16 i = 0; i < polygons[0].pointsCount; i++)
 		{
-			Vector2 v0 = polygons[0].points[i];
-			Vector2 v1 = polygons[0].points[(i + 1) % polygons[0].pointsCount];
-			Vector2 intersect;
-			if (CollisionLineLinePV(midpoint, disectV, v0, Vector2Subtract(v1, v0), &intersect))
+			switch (stage)
 			{
-				if (cutStart == -1)
+			case 0:
 				{
-					intersects[0] = intersect;
-					cutStart = (i + 1) % polygons[0].pointsCount;
-				}
-				else
-				{
-					intersects[1] = intersect;
-					cutEnd = (i + 1) % polygons[0].pointsCount;
+					Vector2 v0 = polygons[0].points[i];
+					Vector2 v1 = polygons[0].points[(i + 1) % polygons[0].pointsCount];
+					Vector2 intersect;
+					if (CollisionLineLinePV(midpoint, disectV, v0, Vector2Subtract(v1, v0), &intersect))
+					{
+						stage++;
+						PolygonClear(&workagon);
+						PolygonAddPoint(&workagon, intersect);
+						PolygonAddPointAt(&polygons[0], intersect, (i + 1) % polygons[0].pointsCount);
+						i = (i + 1) % polygons[0].pointsCount;
+					}
 					break;
 				}
-			}
-		}
-
-		if (cutStart != -1 && cutEnd != -1)
-		{
-			PolygonClear(&workagon);
-			for (uint16 i = cutStart; i != cutEnd; i++)
-			{
-				PolygonAddPoint(&workagon, polygons[0].points[i]);
-			}
-			
-			if (CheckCollisionPointPoly(seeds[0], workagon.points, workagon.pointsCount))
-			{
-				PolygonClear(&polygons[0]);
-				for (uint16 i = 0; i < workagon.pointsCount; i = (i + 1) % workagon.pointsCount)
+			case 1:
 				{
-					PolygonAddPoint(&polygons[0], workagon.points[i]);
+					Vector2 v0 = polygons[0].points[i];
+					Vector2 v1 = polygons[0].points[(i + 1) % polygons[0].pointsCount];
+
+					PolygonAddPoint(&workagon, v0);
+					PolygonRemovePointAt(&polygons[0], i);
+					i--;
+
+					Vector2 intersect;
+					if (CollisionLineLinePV(midpoint, disectV, v0, Vector2Subtract(v1, v0), &intersect))
+					{
+						stage++;
+						PolygonAddPoint(&workagon, intersect);
+						PolygonAddPointAt(&polygons[0], intersect, (i + 1) % polygons[0].pointsCount);
+
+						// Check if seed is in polygon
+						sint16 result = CheckCollisionPointPoly(seeds[0], workagon.points, workagon.pointsCount);
+						printf("%d\n",result);
+						if (result)
+						{
+							// Seed 0 is in polygon, keep it
+							// Do nothing
+						}
+						else
+						{
+							// // Seed 0 is not in polygon, swap to seed 1
+							// PolygonClear(&workagon);
+							// stage = 0;
+							// i = -1; // will become 0 at top of loop
+						}
+					}
+					break;
 				}
-			}
-			else
-			{
-				PolygonClear(&polygons[0]);
-				PolygonAddPoint(&polygons[0], intersects[0]);
-				for (uint16 i = cutEnd; i != cutStart; i = (i + 1) % workagon.pointsCount)
-				{
-					printf("%d\n", i);
-					PolygonAddPoint(&polygons[0], workagon.points[i]);
-				}
-				PolygonAddPoint(&polygons[0], intersects[1]);
+			default:
+				break;
 			}
 		}
-		else if (cutStart != cutEnd)
-		{
-			// something went wrong
-		}
 
+		Color colA = {0, 0, 255, 100};
+		Color colB = {255, 0, 0, 100};
 
-		// for (uint16 i = 1; i < SEED_COUNT; i++)
-		// {
-		// 	uint16 hasCollided = 0;
-
-			
-		// }
-
-		PolygonDrawLines(&polygons[0], WHITE);
+		PolygonDraw(&polygons[0], colA);
+		// PolygonDrawLines(&polygons[0], BLUE);
+		PolygonDraw(&workagon, colB);
+		// PolygonDrawLines(&workagon, RED);
 		
+
 		// Line-line collision test
 		// Vector2 a, b, c, d;
 		// a = seeds[0];

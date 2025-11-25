@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <stdio.h>
+// #include <stdio.h>
 
 #include "raylib.h"
 
@@ -28,7 +28,7 @@ void PolygonAddPoint(Polygon *poly, Vector2 point)
 		poly->pointsCap *= 2;
 		poly->points = (Vector2 *)realloc(poly->points, sizeof(Vector2) * poly->pointsCap);
 	}
-    printf("Adding point (%f, %f) at index %d\n", point.x, point.y, poly->pointsCount);
+    // printf("Adding point (%f, %f) at index %d\n", point.x, point.y, poly->pointsCount);
 	poly->points[poly->pointsCount++] = point;
 	return;
 }
@@ -46,6 +46,16 @@ void PolygonAddPointAt(Polygon *poly, Vector2 point, uint16 index)
     }
     poly->points[index] = point;
     poly->pointsCount++;
+    return;
+}
+
+void PolygonRemovePointAt(Polygon *poly, uint16 index)
+{
+    for (uint16 i = index; i < poly->pointsCount - 1; i++)
+    {
+        poly->points[i] = poly->points[i + 1];
+    }
+    poly->pointsCount--;
     return;
 }
 
@@ -72,5 +82,18 @@ void PolygonDrawLines(Polygon *poly, Color col)
         Vector2 b = poly->points[(i + 1) % poly->pointsCount];
         DrawLineV(a, b, col);
     }
+    return;
+}
+
+void PolygonDraw(Polygon *poly, Color col)
+{
+    // for (uint16 i = 1; i < poly->pointsCount - 1; i++)
+    // {
+    //     Vector2 a = poly->points[0];
+    //     Vector2 b = poly->points[i];
+    //     Vector2 c = poly->points[i + 1];
+    //     DrawTriangle(a, b, c, col);
+    // }
+    DrawTriangleFan(poly->points, poly->pointsCount, col);
     return;
 }
