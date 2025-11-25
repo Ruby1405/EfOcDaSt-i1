@@ -98,7 +98,10 @@ int main ()
 			uint16 ii = i - 1;
 			do
 			{
-				DrawLineV(seeds[i], seeds[ii], WHITE);
+				Vector2 disectV = {seeds[i].y - seeds[ii].y, - seeds[i].y - seeds[ii].y};
+				Vector2 disectP = Vector2Scale(Vector2Add(seeds[i],seeds[ii]),0.5f);
+				// DrawLineV(seeds[i], seeds[ii], WHITE);
+				DrawLineV(Vector2Subtract(disectP,disectV),Vector2Add(disectP, disectV), WHITE);
 			}
 			while (ii-- > 0);
 		}
