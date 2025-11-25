@@ -2,7 +2,7 @@
 
 #include "raylib.h"
 
-#include "definitions.c"
+#include "definitions.h"
 
 const uint16 POLYGON_CAP_INIT = 8;
 typedef struct Polygon
