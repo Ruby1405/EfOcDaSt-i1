@@ -180,6 +180,8 @@ int main ()
 					{
 						stage++;
 						PolygonAddPoint(&workagon, intersect);
+
+						// This polygon is a bit fucked
 						PolygonAddPointAt(&polygons[0], intersect, (i + 1) % polygons[0].pointsCount);
 
 						// Check if seed is in polygon
