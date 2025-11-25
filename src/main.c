@@ -142,21 +142,40 @@ int main ()
 		// }
 		
 		Vector2 a, b, c, d;
-		a = (Vector2){100,100};
-		b = (Vector2){400,400};
-		c = (Vector2){100,400};
-		d = (Vector2){400,100};
+		a = seeds[0];
+		b = seeds[1];
+		c = seeds[2];
+		d = seeds[3];
 
 		Vector2 intersect;
-		if (CollisionLineLine(a, b, c, d, &intersect))
+		uint16 found = CollisionLineLinePP(a, b, c, d, &intersect);
+		if (found)
 		{
-			DrawCircleV(intersect, 5.0, RED);
+			DrawCircleV(intersect, 5.0, GREEN);
 		}
 		else
 		{
 			DrawCircleV((Vector2){1000,1000}, 5.0, RED);
 		}
+		DrawText(TextFormat("Found: %d", found), 10, 30, 20, WHITE);
 
+		Vector2 aA = a;
+		Vector2 aB = b;
+		Vector2 bA = c;
+		Vector2 bB = d;
+
+		Vector2 aV = Vector2Subtract(aB, aA);
+    	Vector2 bV = Vector2Subtract(bB, bA);
+
+		Vector2 aP = aA;
+		Vector2 bP = bA;
+
+		float t = Vector2CrossProduct(Vector2Subtract(bP, aP), bV) / Vector2CrossProduct(aV, bV);
+    	Vector2 inter = Vector2Add(aP, Vector2Scale(aV, t));
+
+		DrawText(TextFormat("t: %f", t), 10, 60, 20, WHITE);
+		DrawText(TextFormat("ix: %f", inter.x), 10, 90, 20, WHITE);
+		DrawText(TextFormat("iy: %f", inter.y), 10, 120, 20, WHITE);
 		DrawLineV(a, b, WHITE);
 		DrawLineV(c, d, WHITE);
 		
@@ -171,40 +190,40 @@ int main ()
 		EndDrawing();
 
 		// Move seeds and bounce off walls
-		// for (uint16 i = 0; i < SEED_COUNT; i++)
-		// {
-		// 	seeds[i] = Vector2Add(seeds[i], Vector2Scale(seedVels[i], GetFrameTime() * 20));
+		for (uint16 i = 0; i < SEED_COUNT; i++)
+		{
+			seeds[i] = Vector2Add(seeds[i], Vector2Scale(seedVels[i], GetFrameTime() * 20));
 
-		// 	seedVels[i].x = (
-		// 		(-seedVels[i].x * (0 > seeds[i].x || BOARD_WIDTH <= seeds[i].x)) +
-		// 		(seedVels[i].x  * (0 <= seeds[i].x && BOARD_WIDTH > seeds[i].x))
-		// 	);
+			seedVels[i].x = (
+				(-seedVels[i].x * (0 > seeds[i].x || BOARD_WIDTH <= seeds[i].x)) +
+				(seedVels[i].x  * (0 <= seeds[i].x && BOARD_WIDTH > seeds[i].x))
+			);
 
-		// 	seedVels[i].y = (
-		// 		(-seedVels[i].y * (0 > seeds[i].y || BOARD_HEIGHT <= seeds[i].y)) +
-		// 		(seedVels[i].y  * (0 <= seeds[i].y && BOARD_HEIGHT > seeds[i].y))
-		// 	);
+			seedVels[i].y = (
+				(-seedVels[i].y * (0 > seeds[i].y || BOARD_HEIGHT <= seeds[i].y)) +
+				(seedVels[i].y  * (0 <= seeds[i].y && BOARD_HEIGHT > seeds[i].y))
+			);
 
-		// 	seeds[i].x = (
-		// 		(-seeds[i].x * (0 > seeds[i].x)) +
-		// 		(seeds[i].x  * (0 <= seeds[i].x))
-		// 	);
+			seeds[i].x = (
+				(-seeds[i].x * (0 > seeds[i].x)) +
+				(seeds[i].x  * (0 <= seeds[i].x))
+			);
 
-		// 	seeds[i].y = (
-		// 		(-seeds[i].y * (0 > seeds[i].y)) +
-		// 		(seeds[i].y  * (0 <= seeds[i].y))
-		// 	);
+			seeds[i].y = (
+				(-seeds[i].y * (0 > seeds[i].y)) +
+				(seeds[i].y  * (0 <= seeds[i].y))
+			);
 
-		// 	seeds[i].x = (
-		// 		((BOARD_WIDTH - (seeds[i].x - BOARD_WIDTH)) * (BOARD_WIDTH <= seeds[i].x)) +
-		// 		(seeds[i].x 				  * (BOARD_WIDTH > seeds[i].x))
-		// 	);
+			seeds[i].x = (
+				((BOARD_WIDTH - (seeds[i].x - BOARD_WIDTH)) * (BOARD_WIDTH <= seeds[i].x)) +
+				(seeds[i].x 				  * (BOARD_WIDTH > seeds[i].x))
+			);
 
-		// 	seeds[i].y = (
-		// 		((BOARD_HEIGHT - (seeds[i].y - BOARD_HEIGHT)) * (BOARD_HEIGHT <= seeds[i].y)) +
-		// 		(seeds[i].y 				  * (BOARD_HEIGHT > seeds[i].y))
-		// 	);
-		// }
+			seeds[i].y = (
+				((BOARD_HEIGHT - (seeds[i].y - BOARD_HEIGHT)) * (BOARD_HEIGHT <= seeds[i].y)) +
+				(seeds[i].y 				  * (BOARD_HEIGHT > seeds[i].y))
+			);
+		}
 	}
 
 	// // cleanup
