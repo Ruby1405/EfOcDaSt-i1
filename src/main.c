@@ -136,15 +136,20 @@ int main ()
 
 		PolygonClear(&polygons[0]);
 		// PolygonAddPoint(&polygons[0], (Vector2){0,0});
-		// PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH,0});
-		// PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH,(float)BOARD_HEIGHT});
 		// PolygonAddPoint(&polygons[0], (Vector2){0,(float)BOARD_HEIGHT});
+		// PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH,(float)BOARD_HEIGHT});
+		// PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH,0});
 
 		PolygonAddPoint(&polygons[0], (Vector2){3,3});
 		PolygonAddPoint(&polygons[0], (Vector2){3,(float)BOARD_HEIGHT - 3});
 		PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH - 3,(float)BOARD_HEIGHT - 3});
 		PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH - 3, 3});
 
+		// for (uint16 i = 0; i < count; i++)
+		// {
+		// 	/* code */
+		// }
+		
 		Vector2 midpoint = Vector2Scale(Vector2Add(seeds[0], seeds[1]), 0.5f);
 		Vector2 disectV = {seeds[0].y - seeds[1].y, - seeds[0].x + seeds[1].x};
 
@@ -154,14 +159,14 @@ int main ()
 		PolygonClear(&workagon0);
 
 		uint16 stage = 0;
-		for (uint16 i = 0; i < polygons[0].pointsCount; i++)
+		for (uint16 v = 0; v < polygons[0].pointsCount; v++)
 		{
 			switch (stage)
 			{
 			case 0:
 				{
-					Vector2 v0 = polygons[0].points[i];
-					Vector2 v1 = polygons[0].points[(i + 1) % polygons[0].pointsCount];
+					Vector2 v0 = polygons[0].points[v];
+					Vector2 v1 = polygons[0].points[(v + 1) % polygons[0].pointsCount];
 					Vector2 intersect;
 
 					PolygonAddPoint(&workagon0, v0);
@@ -180,12 +185,10 @@ int main ()
 				}
 			case 1:
 				{
-					Vector2 v0 = polygons[0].points[i];
-					Vector2 v1 = polygons[0].points[(i + 1) % polygons[0].pointsCount];
+					Vector2 v0 = polygons[0].points[v];
+					Vector2 v1 = polygons[0].points[(v + 1) % polygons[0].pointsCount];
 
 					PolygonAddPoint(&workagon1, v0);
-					// PolygonRemovePoint(&polygons[0]);
-					// i--;
 
 					Vector2 intersect;
 					if (CollisionLineLineSegmentPVPP(midpoint, disectV, v0, v1, &intersect))
@@ -194,14 +197,6 @@ int main ()
 						stage++;
 						PolygonAddPoint(&workagon0, intersect);
 						PolygonAddPoint(&workagon1, intersect);
-
-
-						// This polygon is a bit fucked
-						// PolygonAddPoint(&polygons[0], intersect);
-
-						// Check if seed is in polygon
-						// sint16 result = CheckCollisionPointPoly(seeds[0], workagon1.points, workagon1.pointsCount);
-						// printf("%d\n",result);
 						
 						intersects[1] = intersect;
 					}
@@ -209,23 +204,31 @@ int main ()
 				}
 			case 2:
 				{
-					PolygonAddPoint(&workagon0, polygons[0].points[i]);
+					PolygonAddPoint(&workagon0, polygons[0].points[v]);
 					break;
 				}
 			default:
 				break;
 			}
 		}
-
 		Color colA = {0, 0, 255, 100};
 		Color colB = {255, 0, 0, 100};
+		if (CheckCollisionPointPoly(seeds[0], workagon0.points, workagon0.pointsCount))
+		{
+			PolygonDraw(&workagon0, colA);
+			PolygonDrawLines(&workagon1, RED);
+		}
+		else
+		{
+			PolygonDraw(&workagon1, colB);
+			PolygonDrawLines(&workagon0, BLUE);
+		}
+
 
 		// PolygonDraw(&polygons[0], colA);
 		// PolygonDrawLines(&polygons[0], BLUE);
-		PolygonDraw(&workagon0, colA);
 		// PolygonDrawLines(&workagon0, BLUE);
 		// PolygonDraw(&workagon1, colB);
-		PolygonDrawLines(&workagon1, RED);
 
 		// for (uint16 i = 0; i < polygons[0].pointsCount; i++)
 		// {
