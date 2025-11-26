@@ -105,47 +105,20 @@ int main ()
 		// 	}
 		// }
 
-		// Draw all disectors
-		// for (uint16 i = SEED_COUNT - 1; i > 0; i--)
-		// {
-		// 	uint16 ii = i - 1;
-		// 	do
-		// 	{
-		// 		Vector2 disectV = {seeds[i].y - seeds[ii].y, - seeds[i].y - seeds[ii].y};
-		// 		Vector2 disectP = Vector2Scale(Vector2Add(seeds[i],seeds[ii]),0.5f);
-		// 		// DrawLineV(seeds[i], seeds[ii], WHITE);
-		// 		DrawLineV(Vector2Subtract(disectP,disectV),Vector2Add(disectP, disectV), WHITE);
-		// 	}
-		// 	while (ii-- > 0);
-		// }
-
-		// for (uint16 i = SEED_COUNT - 1; i > 0; i--)
-		// {
-		// 	uint16 ii = i - 1;
-		// 	do
-		// 	{
-		// 		Vector2 disectV = {seeds[i].y - seeds[ii].y, - seeds[i].y - seeds[ii].y};
-		// 		Vector2 disectP = Vector2Scale(Vector2Add(seeds[i],seeds[ii]),0.5f);
-		// 		// DrawLineV(seeds[i], seeds[ii], WHITE);
-		// 		DrawLineV(Vector2Subtract(disectP,disectV),Vector2Add(disectP, disectV), WHITE);
-		// 	}
-		// 	while (ii-- > 0);
-		// }
-
 		// Polygon construction attempt
 
 		uint16 s0 = 0;
 
 		PolygonClear(&polygons[s0]);
-		// PolygonAddPoint(&polygons[0], (Vector2){0,0});
-		// PolygonAddPoint(&polygons[0], (Vector2){0,(float)BOARD_HEIGHT});
-		// PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH,(float)BOARD_HEIGHT});
-		// PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH,0});
+		PolygonAddPoint(&polygons[0], (Vector2){0,0});
+		PolygonAddPoint(&polygons[0], (Vector2){0,(float)BOARD_HEIGHT});
+		PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH,(float)BOARD_HEIGHT});
+		PolygonAddPoint(&polygons[0], (Vector2){(float)BOARD_WIDTH,0});
 
-		PolygonAddPoint(&polygons[s0], (Vector2){3,3});
-		PolygonAddPoint(&polygons[s0], (Vector2){3,(float)BOARD_HEIGHT - 3});
-		PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH - 3,(float)BOARD_HEIGHT - 3});
-		PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH - 3, 3});
+		// PolygonAddPoint(&polygons[s0], (Vector2){3,3});
+		// PolygonAddPoint(&polygons[s0], (Vector2){3,(float)BOARD_HEIGHT - 3});
+		// PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH - 3,(float)BOARD_HEIGHT - 3});
+		// PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH - 3, 3});
 
 		
 
@@ -219,14 +192,8 @@ int main ()
 				break;
 			}
 		}
-		// Color colA = {0, 0, 255, 100};
-		// Color colB = {255, 0, 0, 100};
 		if (CheckCollisionPointPoly(seeds[s0], workagon0.points, workagon0.pointsCount))
 		{
-			// PolygonDraw(&workagon0, colA);
-			// PolygonDraw(&workagon1, colB);
-
-			
 			Vector2 * temppoints = polygons[s0].points;
 			uint16 temppointsCount = polygons[s0].pointsCount;
 			uint16 temppointsCap = polygons[s0].pointsCap;
@@ -239,10 +206,6 @@ int main ()
 		}
 		else
 		{
-			// PolygonDraw(&workagon0, colA);
-			// PolygonDraw(&workagon1, colB);
-			
-			
 			Vector2 * temppoints = polygons[s0].points;
 			uint16 temppointsCount = polygons[s0].pointsCount;
 			uint16 temppointsCap = polygons[s0].pointsCap;
@@ -257,101 +220,6 @@ int main ()
 
 		Color colC = {255, 255, 0, 100};
 		PolygonDraw(&polygons[0], colC);
-		// PolygonDrawLines(&polygons[0], YELLOW);
-
-		// PolygonDraw(&polygons[0], colA);
-		// PolygonDrawLines(&polygons[0], BLUE);
-		// PolygonDrawLines(&workagon0, BLUE);
-		// PolygonDraw(&workagon1, colB);
-
-		// for (uint16 i = 0; i < polygons[0].pointsCount; i++)
-		// {
-			// 	DrawText(
-		// 		TextFormat("(%0.1f, %0.1f)", polygons[0].points[i].x, polygons[0].points[i].y),
-		// 		(int)MinFloat(polygons[0].points[i].x + 5, BOARD_WIDTH - 100),
-		// 		(int)MinFloat(polygons[0].points[i].y + 5, BOARD_HEIGHT - 20),
-		// 		10, WHITE);
-
-		// 	DrawText(
-		// 		TextFormat("(%0.1f, %0.1f)", polygons[0].points[i].x, polygons[0].points[i].y),
-		// 		BOARD_WIDTH-150,
-		// 		20 + (i * 25),
-		// 		20, BLUE);
-		// }
-
-		// for (uint16 i = 0; i < workagon0.pointsCount; i++)
-		// {
-		// 	DrawText(
-		// 		TextFormat("(%0.1f, %0.1f)", workagon0.points[i].x, workagon0.points[i].y),
-		// 		(int)MinFloat(workagon0.points[i].x + 5, BOARD_WIDTH - 100),
-		// 		(int)MinFloat(workagon0.points[i].y + 5, BOARD_HEIGHT - 20),
-		// 		10, WHITE);
-
-		// 	DrawText(
-		// 		TextFormat("(%0.1f, %0.1f)", workagon0.points[i].x, workagon0.points[i].y),
-		// 		BOARD_WIDTH-150,
-		// 		40 + (i * 25),
-		// 		20, BLUE);
-		// }
-
-		// for (uint16 i = 0; i < workagon1.pointsCount; i++)
-		// {
-		// 	DrawText(
-		// 		TextFormat("(%0.1f, %0.1f)", workagon1.points[i].x, workagon1.points[i].y),
-		// 		(int)MinFloat(workagon1.points[i].x + 5, BOARD_WIDTH - 100),
-		// 		(int)MinFloat(workagon1.points[i].y + 5, BOARD_HEIGHT - 20),
-		// 		10, WHITE);
-
-		// 	DrawText(
-		// 		TextFormat("(%0.1f, %0.1f)", workagon1.points[i].x, workagon1.points[i].y),
-		// 		BOARD_WIDTH-150,
-		// 		BOARD_HEIGHT - (40 + (i * 25)),
-		// 		20, RED);
-		// }
-
-		// DrawText(
-		// 	TextFormat("(%0.1f, %0.1f)", intersects[0].x, intersects[0].y),
-		// 	BOARD_WIDTH - 150,
-		// 	BOARD_HEIGHT * 0.5f - 15,
-		// 	20, didIntersects[0] ? GREEN : WHITE
-		// );
-		// DrawText(
-		// 	TextFormat("(%0.1f, %0.1f)", intersects[1].x, intersects[1].y),
-		// 	BOARD_WIDTH - 150,
-		// 	BOARD_HEIGHT * 0.5f + 15,
-		// 	20, didIntersects[1] ? GREEN : WHITE
-		// );
-
-		// DrawText(
-		// 	TextFormat("Seed 0: (%0.1f, %0.1f)", seeds[0].x, seeds[0].y),
-		// 	10,
-		// 	40,
-		// 	10, WHITE);
-		// DrawText(
-		// 	TextFormat("Seed 1: (%0.1f, %0.1f)", seeds[1].x, seeds[1].y),
-		// 	10,
-		// 	60,
-		// 	10, WHITE);
-		
-		
-		
-
-		// Line-line collision test
-		// Vector2 a, b, c, d;
-		// a = seeds[0];
-		// b = seeds[1];
-		// c = seeds[2];
-		// d = seeds[3];
-
-		// DrawLineV(a, b, WHITE);
-		// DrawLineV(c, d, WHITE);
-
-		// Vector2 intersect;
-		
-		// if (CollisionLineLinePP(a, b, c, d, &intersect))
-		// {
-		// 	DrawCircleV(intersect, 10.0, RED);
-		// }
 		
 		
 		// Draw seeds
