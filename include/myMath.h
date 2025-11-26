@@ -43,13 +43,16 @@ uint16 CollisionLineLineSegmentPVPP(Vector2 aP, Vector2 aV, Vector2 bA, Vector2 
     }
 
     // Narrow phase check to see if the intersection is within the line segment
-    if (
-        (broadIntersect.x < MinFloat(bA.x, bB.x)) ||
-        (broadIntersect.x > MaxFloat(bA.x, bB.x)) ||
-        (broadIntersect.y < MinFloat(bA.y, bB.y)) ||
-        (broadIntersect.y > MaxFloat(bA.y, bB.y))
-    )
+    if ((broadIntersect.x < MinFloat(bA.x, bB.x) ||
+        broadIntersect.x > MaxFloat(bA.x, bB.x)) &&
+        bA.x != bB.x)
     {
+        return 0;
+    }
+    if ((broadIntersect.y < MinFloat(bA.y, bB.y) ||
+        broadIntersect.y > MaxFloat(bA.y, bB.y)) &&
+        bA.y != bB.y)
+    {   
         return 0;
     }
 
