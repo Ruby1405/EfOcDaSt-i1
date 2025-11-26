@@ -218,16 +218,39 @@ int main ()
 		if (CheckCollisionPointPoly(seeds[s], workagon0.points, workagon0.pointsCount))
 		{
 			PolygonDraw(&workagon0, colA);
-			PolygonDrawLines(&workagon1, RED);
+			PolygonDraw(&workagon1, colB);
 
-			
+
+			Vector2 * temppoints = polygons[s].points;
+			uint16 temppointsCount = polygons[s].pointsCount;
+			uint16 temppointsCap = polygons[s].pointsCap;
+			polygons[s].points = workagon0.points;
+			polygons[s].pointsCount = workagon0.pointsCount;
+			polygons[s].pointsCap = workagon0.pointsCap;
+			workagon0.points = temppoints;
+			workagon0.pointsCount = temppointsCount;
+			workagon0.pointsCap = temppointsCap;
 		}
 		else
 		{
+			PolygonDraw(&workagon0, colA);
 			PolygonDraw(&workagon1, colB);
-			PolygonDrawLines(&workagon0, BLUE);
+
+
+			Vector2 * temppoints = polygons[s].points;
+			uint16 temppointsCount = polygons[s].pointsCount;
+			uint16 temppointsCap = polygons[s].pointsCap;
+			polygons[s].points = workagon1.points;
+			polygons[s].pointsCount = workagon1.pointsCount;
+			polygons[s].pointsCap = workagon1.pointsCap;
+			workagon1.points = temppoints;
+			workagon1.pointsCount = temppointsCount;
+			workagon1.pointsCap = temppointsCap;
 		}
 
+		// Color colC = {255, 255, 0, 100};
+		// PolygonDraw(&polygons[0], colC);
+		PolygonDrawLines(&polygons[0], YELLOW);
 
 		// PolygonDraw(&polygons[0], colA);
 		// PolygonDrawLines(&polygons[0], BLUE);
