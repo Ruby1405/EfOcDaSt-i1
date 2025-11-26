@@ -148,7 +148,8 @@ int main ()
 		Vector2 midpoint = Vector2Scale(Vector2Add(seeds[0], seeds[1]), 0.5f);
 		Vector2 disectV = {seeds[0].y - seeds[1].y, - seeds[0].x + seeds[1].x};
 
-		Vector2 intersects[2];
+		Vector2 intersects[2] = {(Vector2){0,0}, (Vector2){0,0}};
+		uint16 didIntersects[2] = {0,0};
 
 		PolygonClear(&workagon0);
 
@@ -167,6 +168,7 @@ int main ()
 					
 					if (CollisionLineLineSegmentPVPP(midpoint, disectV, v0, v1, &intersect))
 					{
+						didIntersects[0] = 1;
 						stage++;
 						PolygonAddPoint(&workagon0, intersect);
 						PolygonClear(&workagon1);
@@ -188,6 +190,7 @@ int main ()
 					Vector2 intersect;
 					if (CollisionLineLineSegmentPVPP(midpoint, disectV, v0, v1, &intersect))
 					{
+						didIntersects[1] = 1;
 						stage++;
 						PolygonAddPoint(&workagon0, intersect);
 						PolygonAddPoint(&workagon1, intersect);
@@ -197,21 +200,9 @@ int main ()
 						// PolygonAddPoint(&polygons[0], intersect);
 
 						// Check if seed is in polygon
-						sint16 result = CheckCollisionPointPoly(seeds[0], workagon1.points, workagon1.pointsCount);
+						// sint16 result = CheckCollisionPointPoly(seeds[0], workagon1.points, workagon1.pointsCount);
 						// printf("%d\n",result);
-						if (result)
-						{
-							// Seed 0 is in polygon, keep it
-							// Do nothing
-						}
-						else
-						{
-							// // Seed 0 is not in polygon, swap to seed 1
-							// PolygonClear(&workagon);
-							// stage = 0;
-							// i = -1; // will become 0 at top of loop
-						}
-
+						
 						intersects[1] = intersect;
 					}
 					break;
@@ -285,13 +276,13 @@ int main ()
 			TextFormat("(%0.1f, %0.1f)", intersects[0].x, intersects[0].y),
 			BOARD_WIDTH - 150,
 			BOARD_HEIGHT * 0.5f - 15,
-			20, WHITE
+			20, didIntersects[0] ? GREEN : WHITE
 		);
 		DrawText(
 			TextFormat("(%0.1f, %0.1f)", intersects[1].x, intersects[1].y),
 			BOARD_WIDTH - 150,
 			BOARD_HEIGHT * 0.5f + 15,
-			20, WHITE
+			20, didIntersects[1] ? GREEN : WHITE
 		);
 
 		DrawText(
