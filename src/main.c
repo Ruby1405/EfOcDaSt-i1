@@ -158,15 +158,17 @@ int main ()
 
 		PolygonClear(&workagon0);
 
+		uint16 s = 0;
+
 		uint16 stage = 0;
-		for (uint16 v = 0; v < polygons[0].pointsCount; v++)
+		for (uint16 v = 0; v < polygons[s].pointsCount; v++)
 		{
 			switch (stage)
 			{
 			case 0:
 				{
-					Vector2 v0 = polygons[0].points[v];
-					Vector2 v1 = polygons[0].points[(v + 1) % polygons[0].pointsCount];
+					Vector2 v0 = polygons[s].points[v];
+					Vector2 v1 = polygons[s].points[(v + 1) % polygons[s].pointsCount];
 					Vector2 intersect;
 
 					PolygonAddPoint(&workagon0, v0);
@@ -185,8 +187,8 @@ int main ()
 				}
 			case 1:
 				{
-					Vector2 v0 = polygons[0].points[v];
-					Vector2 v1 = polygons[0].points[(v + 1) % polygons[0].pointsCount];
+					Vector2 v0 = polygons[s].points[v];
+					Vector2 v1 = polygons[s].points[(v + 1) % polygons[s].pointsCount];
 
 					PolygonAddPoint(&workagon1, v0);
 
@@ -204,7 +206,7 @@ int main ()
 				}
 			case 2:
 				{
-					PolygonAddPoint(&workagon0, polygons[0].points[v]);
+					PolygonAddPoint(&workagon0, polygons[s].points[v]);
 					break;
 				}
 			default:
@@ -213,10 +215,12 @@ int main ()
 		}
 		Color colA = {0, 0, 255, 100};
 		Color colB = {255, 0, 0, 100};
-		if (CheckCollisionPointPoly(seeds[0], workagon0.points, workagon0.pointsCount))
+		if (CheckCollisionPointPoly(seeds[s], workagon0.points, workagon0.pointsCount))
 		{
 			PolygonDraw(&workagon0, colA);
 			PolygonDrawLines(&workagon1, RED);
+
+			
 		}
 		else
 		{
