@@ -72,8 +72,10 @@ int main ()
 		PolygonInit(&polygons[i]);
 	}
 
-	Polygon workagon;
-	PolygonInit(&workagon);
+	Polygon workagon0;
+	PolygonInit(&workagon0);
+	Polygon workagon1;
+	PolygonInit(&workagon1);
 	
 	while (!WindowShouldClose())
 	{	
@@ -146,6 +148,10 @@ int main ()
 		Vector2 midpoint = Vector2Scale(Vector2Add(seeds[0], seeds[1]), 0.5f);
 		Vector2 disectV = {seeds[0].y - seeds[1].y, - seeds[0].x + seeds[1].x};
 
+		Vector2 intersects[2];
+
+		PolygonClear(&workagon0);
+
 		uint16 stage = 0;
 		for (uint16 i = 0; i < polygons[0].pointsCount; i++)
 		{
@@ -156,13 +162,17 @@ int main ()
 					Vector2 v0 = polygons[0].points[i];
 					Vector2 v1 = polygons[0].points[(i + 1) % polygons[0].pointsCount];
 					Vector2 intersect;
-					if (CollisionLineLinePV(midpoint, disectV, v0, Vector2Subtract(v1, v0), &intersect))
+
+					PolygonAddPoint(&workagon0, v0);
+					
+					if (CollisionLineLineSegmentPVPP(midpoint, disectV, v0, v1, &intersect))
 					{
 						stage++;
-						PolygonClear(&workagon);
-						PolygonAddPoint(&workagon, intersect);
-						PolygonAddPointAt(&polygons[0], intersect, (i + 1) % polygons[0].pointsCount);
-						i = (i + 1) % polygons[0].pointsCount;
+						PolygonAddPoint(&workagon0, intersect);
+						PolygonClear(&workagon1);
+						PolygonAddPoint(&workagon1, intersect);
+						
+						intersects[0] = intersect;
 					}
 					break;
 				}
@@ -171,22 +181,24 @@ int main ()
 					Vector2 v0 = polygons[0].points[i];
 					Vector2 v1 = polygons[0].points[(i + 1) % polygons[0].pointsCount];
 
-					PolygonAddPoint(&workagon, v0);
-					PolygonRemovePointAt(&polygons[0], i);
-					i--;
+					PolygonAddPoint(&workagon1, v0);
+					// PolygonRemovePoint(&polygons[0]);
+					// i--;
 
 					Vector2 intersect;
-					if (CollisionLineLinePV(midpoint, disectV, v0, Vector2Subtract(v1, v0), &intersect))
+					if (CollisionLineLineSegmentPVPP(midpoint, disectV, v0, v1, &intersect))
 					{
 						stage++;
-						PolygonAddPoint(&workagon, intersect);
+						PolygonAddPoint(&workagon0, intersect);
+						PolygonAddPoint(&workagon1, intersect);
+
 
 						// This polygon is a bit fucked
-						PolygonAddPointAt(&polygons[0], intersect, (i + 1) % polygons[0].pointsCount);
+						// PolygonAddPoint(&polygons[0], intersect);
 
 						// Check if seed is in polygon
-						sint16 result = CheckCollisionPointPoly(seeds[0], workagon.points, workagon.pointsCount);
-						printf("%d\n",result);
+						sint16 result = CheckCollisionPointPoly(seeds[0], workagon1.points, workagon1.pointsCount);
+						// printf("%d\n",result);
 						if (result)
 						{
 							// Seed 0 is in polygon, keep it
@@ -199,7 +211,14 @@ int main ()
 							// stage = 0;
 							// i = -1; // will become 0 at top of loop
 						}
+
+						intersects[1] = intersect;
 					}
+					break;
+				}
+			case 2:
+				{
+					PolygonAddPoint(&workagon0, polygons[0].points[i]);
 					break;
 				}
 			default:
@@ -210,10 +229,83 @@ int main ()
 		Color colA = {0, 0, 255, 100};
 		Color colB = {255, 0, 0, 100};
 
-		PolygonDraw(&polygons[0], colA);
+		// PolygonDraw(&polygons[0], colA);
 		// PolygonDrawLines(&polygons[0], BLUE);
-		PolygonDraw(&workagon, colB);
-		// PolygonDrawLines(&workagon, RED);
+		PolygonDraw(&workagon0, colA);
+		// PolygonDrawLines(&workagon0, BLUE);
+		// PolygonDraw(&workagon1, colB);
+		PolygonDrawLines(&workagon1, RED);
+
+		// for (uint16 i = 0; i < polygons[0].pointsCount; i++)
+		// {
+		// 	DrawText(
+		// 		TextFormat("(%0.1f, %0.1f)", polygons[0].points[i].x, polygons[0].points[i].y),
+		// 		(int)MinFloat(polygons[0].points[i].x + 5, BOARD_WIDTH - 100),
+		// 		(int)MinFloat(polygons[0].points[i].y + 5, BOARD_HEIGHT - 20),
+		// 		10, WHITE);
+
+		// 	DrawText(
+		// 		TextFormat("(%0.1f, %0.1f)", polygons[0].points[i].x, polygons[0].points[i].y),
+		// 		BOARD_WIDTH-150,
+		// 		20 + (i * 25),
+		// 		20, BLUE);
+		// }
+
+		for (uint16 i = 0; i < workagon0.pointsCount; i++)
+		{
+			DrawText(
+				TextFormat("(%0.1f, %0.1f)", workagon0.points[i].x, workagon0.points[i].y),
+				(int)MinFloat(workagon0.points[i].x + 5, BOARD_WIDTH - 100),
+				(int)MinFloat(workagon0.points[i].y + 5, BOARD_HEIGHT - 20),
+				10, WHITE);
+
+			DrawText(
+				TextFormat("(%0.1f, %0.1f)", workagon0.points[i].x, workagon0.points[i].y),
+				BOARD_WIDTH-150,
+				40 + (i * 25),
+				20, BLUE);
+		}
+
+		for (uint16 i = 0; i < workagon1.pointsCount; i++)
+		{
+			DrawText(
+				TextFormat("(%0.1f, %0.1f)", workagon1.points[i].x, workagon1.points[i].y),
+				(int)MinFloat(workagon1.points[i].x + 5, BOARD_WIDTH - 100),
+				(int)MinFloat(workagon1.points[i].y + 5, BOARD_HEIGHT - 20),
+				10, WHITE);
+
+			DrawText(
+				TextFormat("(%0.1f, %0.1f)", workagon1.points[i].x, workagon1.points[i].y),
+				BOARD_WIDTH-150,
+				BOARD_HEIGHT - (40 + (i * 25)),
+				20, RED);
+		}
+
+		DrawText(
+			TextFormat("(%0.1f, %0.1f)", intersects[0].x, intersects[0].y),
+			BOARD_WIDTH - 150,
+			BOARD_HEIGHT * 0.5f - 15,
+			20, WHITE
+		);
+		DrawText(
+			TextFormat("(%0.1f, %0.1f)", intersects[1].x, intersects[1].y),
+			BOARD_WIDTH - 150,
+			BOARD_HEIGHT * 0.5f + 15,
+			20, WHITE
+		);
+
+		DrawText(
+			TextFormat("Seed 0: (%0.1f, %0.1f)", seeds[0].x, seeds[0].y),
+			10,
+			40,
+			10, WHITE);
+		DrawText(
+			TextFormat("Seed 1: (%0.1f, %0.1f)", seeds[1].x, seeds[1].y),
+			10,
+			60,
+			10, WHITE);
+		
+		
 		
 
 		// Line-line collision test
@@ -237,48 +329,59 @@ int main ()
 		// Draw seeds
 		for (uint16 i = 0; i < 2; i++)
 		{
-			DrawCircleV(seeds[i], 2.0, WHITE);
+			DrawCircleV(seeds[i], 5.0 - (i * 2), WHITE);
 		}
 		
-		DrawFPS(10, 10);
+		// DrawFPS(10, 10);
 
 		EndDrawing();
 
-		// Move seeds and bounce off walls
-		for (uint16 i = 0; i < SEED_COUNT; i++)
+		// Get mouse input
+		Vector2 mousePos = GetMousePosition();
+		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
 		{
-			seeds[i] = Vector2Add(seeds[i], Vector2Scale(seedVels[i], GetFrameTime() * 20));
-
-			seedVels[i].x = (
-				(-seedVels[i].x * (0 > seeds[i].x || BOARD_WIDTH <= seeds[i].x)) +
-				(seedVels[i].x  * (0 <= seeds[i].x && BOARD_WIDTH > seeds[i].x))
-			);
-
-			seedVels[i].y = (
-				(-seedVels[i].y * (0 > seeds[i].y || BOARD_HEIGHT <= seeds[i].y)) +
-				(seedVels[i].y  * (0 <= seeds[i].y && BOARD_HEIGHT > seeds[i].y))
-			);
-
-			seeds[i].x = (
-				(-seeds[i].x * (0 > seeds[i].x)) +
-				(seeds[i].x  * (0 <= seeds[i].x))
-			);
-
-			seeds[i].y = (
-				(-seeds[i].y * (0 > seeds[i].y)) +
-				(seeds[i].y  * (0 <= seeds[i].y))
-			);
-
-			seeds[i].x = (
-				((BOARD_WIDTH - (seeds[i].x - BOARD_WIDTH)) * (BOARD_WIDTH <= seeds[i].x)) +
-				(seeds[i].x 				  * (BOARD_WIDTH > seeds[i].x))
-			);
-
-			seeds[i].y = (
-				((BOARD_HEIGHT - (seeds[i].y - BOARD_HEIGHT)) * (BOARD_HEIGHT <= seeds[i].y)) +
-				(seeds[i].y 				  * (BOARD_HEIGHT > seeds[i].y))
-			);
+			seeds[0] = mousePos;
 		}
+		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+		{
+			seeds[1] = mousePos;
+		}
+
+		// Move seeds and bounce off walls
+		// for (uint16 i = 0; i < SEED_COUNT; i++)
+		// {
+		// 	seeds[i] = Vector2Add(seeds[i], Vector2Scale(seedVels[i], GetFrameTime() * 20));
+
+		// 	seedVels[i].x = (
+		// 		(-seedVels[i].x * (0 > seeds[i].x || BOARD_WIDTH <= seeds[i].x)) +
+		// 		(seedVels[i].x  * (0 <= seeds[i].x && BOARD_WIDTH > seeds[i].x))
+		// 	);
+
+		// 	seedVels[i].y = (
+		// 		(-seedVels[i].y * (0 > seeds[i].y || BOARD_HEIGHT <= seeds[i].y)) +
+		// 		(seedVels[i].y  * (0 <= seeds[i].y && BOARD_HEIGHT > seeds[i].y))
+		// 	);
+
+		// 	seeds[i].x = (
+		// 		(-seeds[i].x * (0 > seeds[i].x)) +
+		// 		(seeds[i].x  * (0 <= seeds[i].x))
+		// 	);
+
+		// 	seeds[i].y = (
+		// 		(-seeds[i].y * (0 > seeds[i].y)) +
+		// 		(seeds[i].y  * (0 <= seeds[i].y))
+		// 	);
+
+		// 	seeds[i].x = (
+		// 		((BOARD_WIDTH - (seeds[i].x - BOARD_WIDTH)) * (BOARD_WIDTH <= seeds[i].x)) +
+		// 		(seeds[i].x 				  * (BOARD_WIDTH > seeds[i].x))
+		// 	);
+
+		// 	seeds[i].y = (
+		// 		((BOARD_HEIGHT - (seeds[i].y - BOARD_HEIGHT)) * (BOARD_HEIGHT <= seeds[i].y)) +
+		// 		(seeds[i].y 				  * (BOARD_HEIGHT > seeds[i].y))
+		// 	);
+		// }
 	}
 
 	// // cleanup

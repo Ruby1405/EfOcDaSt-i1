@@ -5,15 +5,15 @@
 
 #include "definitions.h"
 
-// inline float MaxFloat(float a, float b)
-// {
-//     return (a * (a >= b)) + (b * (b > a));
-// }
+float MaxFloat(float a, float b)
+{
+    return (a * (a >= b)) + (b * (b > a));
+}
 
-// inline float MinFloat(float a, float b)
-// {
-//     return (a * (a <= b)) + (b * (b < a));
-// }
+float MinFloat(float a, float b)
+{
+    return (a * (a <= b)) + (b * (b < a));
+}
 
 uint16 CollisionLineLinePV(Vector2 aP, Vector2 aV, Vector2 bP, Vector2 bV, Vector2 *intersect)
 {
@@ -33,7 +33,7 @@ uint16 CollisionLineLinePP(Vector2 aA, Vector2 aB, Vector2 bA, Vector2 bB, Vecto
     return CollisionLineLinePV(aA, aV, bA, bV, intersect);
 }
 
-uint16 CollisionLineLineSegmentVPPP(Vector2 aP, Vector2 aV, Vector2 bA, Vector2 bB, Vector2 *intersect)
+uint16 CollisionLineLineSegmentPVPP(Vector2 aP, Vector2 aV, Vector2 bA, Vector2 bB, Vector2 *intersect)
 {
     // Broad phase unsegmented line check
     Vector2 broadIntersect;

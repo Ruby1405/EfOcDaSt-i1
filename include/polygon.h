@@ -49,6 +49,16 @@ void PolygonAddPointAt(Polygon *poly, Vector2 point, uint16 index)
     return;
 }
 
+void PolygonRemovePoint(Polygon *poly)
+{
+    if (poly->pointsCount == 0)
+    {
+        return;
+    }
+    poly->pointsCount--;
+    return;
+}
+
 void PolygonRemovePointAt(Polygon *poly, uint16 index)
 {
     for (uint16 i = index; i < poly->pointsCount - 1; i++)
