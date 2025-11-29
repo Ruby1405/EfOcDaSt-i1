@@ -5,6 +5,9 @@
 
 #include "definitions.h"
 
+// Float Equality Margin
+const float FEM = 0.0001f;
+
 float MaxFloat(float a, float b)
 {
     return (a * (a >= b)) + (b * (b > a));
@@ -43,14 +46,14 @@ uint16 CollisionLineLineSegmentPVPP(Vector2 aP, Vector2 aV, Vector2 bA, Vector2 
     }
 
     // Narrow phase check to see if the intersection is within the line segment
-    if ((broadIntersect.x < MinFloat(bA.x, bB.x) ||
-        broadIntersect.x > MaxFloat(bA.x, bB.x)) &&
+    if ((broadIntersect.x + FEM < MinFloat(bA.x, bB.x) ||
+        broadIntersect.x - FEM > MaxFloat(bA.x, bB.x)) &&
         bA.x != bB.x)
     {
         return 0;
     }
-    if ((broadIntersect.y < MinFloat(bA.y, bB.y) ||
-        broadIntersect.y > MaxFloat(bA.y, bB.y)) &&
+    if ((broadIntersect.y + FEM < MinFloat(bA.y, bB.y) ||
+        broadIntersect.y - FEM > MaxFloat(bA.y, bB.y)) &&
         bA.y != bB.y)
     {   
         return 0;
