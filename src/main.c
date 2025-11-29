@@ -66,170 +66,170 @@ int main ()
 	// uint16 disectorsCount = 0;
 	// Disector *disectors = (Disector *)malloc(sizeof(Disector) * DISECTORS_CAP_INIT);
 
-	// Polygon polygons[SEED_COUNT];
+	Polygon polygons[SEED_COUNT];
 	
-	// for (uint16 i = 0; i < SEED_COUNT; i++)
-	// {
-	// 	PolygonInit(&polygons[i]);
-	// }
+	for (uint16 i = 0; i < SEED_COUNT; i++)
+	{
+		PolygonInit(&polygons[i]);
+	}
 
-	// Polygon workagon0;
-	// PolygonInit(&workagon0);
-	// Polygon workagon1;
-	// PolygonInit(&workagon1);
+	Polygon workagon0;
+	PolygonInit(&workagon0);
+	Polygon workagon1;
+	PolygonInit(&workagon1);
 	
 	while (!WindowShouldClose())
 	{	
-		// // Polygon construction attempt
+		// Polygon construction attempt
 
-		// // uint16 s0 = 0;
-		// for (uint16 s0 = 0; s0 < SEED_COUNT; s0++)
-		// {
+		// uint16 s0 = 0;
+		for (uint16 s0 = 0; s0 < SEED_COUNT; s0++)
+		{
 
-		// 	PolygonClear(&polygons[s0]);
-		// 	PolygonAddPoint(&polygons[s0], (Vector2){0,0});
-		// 	PolygonAddPoint(&polygons[s0], (Vector2){0,(float)BOARD_HEIGHT});
-		// 	PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH,(float)BOARD_HEIGHT});
-		// 	PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH,0});
+			PolygonClear(&polygons[s0]);
+			PolygonAddPoint(&polygons[s0], (Vector2){0,0});
+			PolygonAddPoint(&polygons[s0], (Vector2){0,(float)BOARD_HEIGHT});
+			PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH,(float)BOARD_HEIGHT});
+			PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH,0});
 
-		// 	// PolygonAddPoint(&polygons[s0], (Vector2){3,3});
-		// 	// PolygonAddPoint(&polygons[s0], (Vector2){3,(float)BOARD_HEIGHT - 3});
-		// 	// PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH - 3,(float)BOARD_HEIGHT - 3});
-		// 	// PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH - 3, 3});
+			// PolygonAddPoint(&polygons[s0], (Vector2){3,3});
+			// PolygonAddPoint(&polygons[s0], (Vector2){3,(float)BOARD_HEIGHT - 3});
+			// PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH - 3,(float)BOARD_HEIGHT - 3});
+			// PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH - 3, 3});
 
-		// 	for (uint16 s1 = 0; s1 < SEED_COUNT; s1++)
-		// 	{
-		// 		if (s0 == s1) continue;
+			for (uint16 s1 = 0; s1 < SEED_COUNT; s1++)
+			{
+				if (s0 == s1) continue;
 
 				
-		// 		Vector2 midpoint = Vector2Scale(Vector2Add(seeds[s0], seeds[s1]), 0.5f);
-		// 		Vector2 disectV = {seeds[s0].y - seeds[s1].y, - seeds[s0].x + seeds[s1].x};
+				Vector2 midpoint = Vector2Scale(Vector2Add(seeds[s0], seeds[s1]), 0.5f);
+				Vector2 disectV = {seeds[s0].y - seeds[s1].y, - seeds[s0].x + seeds[s1].x};
 				
-		// 		// Vector2 intersects[2] = {(Vector2){0,0}, (Vector2){0,0}};
-		// 		// uint16 didIntersects[2] = {0,0};
+				// Vector2 intersects[2] = {(Vector2){0,0}, (Vector2){0,0}};
+				// uint16 didIntersects[2] = {0,0};
 				
-		// 		PolygonClear(&workagon0);
+				PolygonClear(&workagon0);
 				
-		// 		uint16 stage = 0;
-		// 		for (uint16 v = 0; v < polygons[s0].pointsCount; v++)
-		// 		{
-		// 			switch (stage)
-		// 			{
-		// 				case 0:
-		// 				{
-		// 					Vector2 v0 = polygons[s0].points[v];
-		// 					Vector2 v1 = polygons[s0].points[(v + 1) % polygons[s0].pointsCount];
-		// 					Vector2 intersect;
+				uint16 stage = 0;
+				for (uint16 v = 0; v < polygons[s0].pointsCount; v++)
+				{
+					switch (stage)
+					{
+						case 0:
+						{
+							Vector2 v0 = polygons[s0].points[v];
+							Vector2 v1 = polygons[s0].points[(v + 1) % polygons[s0].pointsCount];
+							Vector2 intersect;
 
-		// 					PolygonAddPoint(&workagon0, v0);
+							PolygonAddPoint(&workagon0, v0);
 							
-		// 					if (CollisionLineLineSegmentPVPP(midpoint, disectV, v0, v1, &intersect))
-		// 					{
-		// 						// didIntersects[0] = 1;
+							if (CollisionLineLineSegmentPVPP(midpoint, disectV, v0, v1, &intersect))
+							{
+								// didIntersects[0] = 1;
 
-		// 						stage++;
-		// 						PolygonAddPoint(&workagon0, intersect);
-		// 						PolygonClear(&workagon1);
-		// 						PolygonAddPoint(&workagon1, intersect);
+								stage++;
+								PolygonAddPoint(&workagon0, intersect);
+								PolygonClear(&workagon1);
+								PolygonAddPoint(&workagon1, intersect);
 								
-		// 						// intersects[0] = intersect;
-		// 					}
-		// 					break;
-		// 				}
-		// 			case 1:
-		// 				{
-		// 					Vector2 v0 = polygons[s0].points[v];
-		// 					Vector2 v1 = polygons[s0].points[(v + 1) % polygons[s0].pointsCount];
+								// intersects[0] = intersect;
+							}
+							break;
+						}
+					case 1:
+						{
+							Vector2 v0 = polygons[s0].points[v];
+							Vector2 v1 = polygons[s0].points[(v + 1) % polygons[s0].pointsCount];
 
-		// 					PolygonAddPoint(&workagon1, v0);
+							PolygonAddPoint(&workagon1, v0);
 
-		// 					Vector2 intersect;
-		// 					if (CollisionLineLineSegmentPVPP(midpoint, disectV, v0, v1, &intersect))
-		// 					{
-		// 						// didIntersects[1] = 1;
+							Vector2 intersect;
+							if (CollisionLineLineSegmentPVPP(midpoint, disectV, v0, v1, &intersect))
+							{
+								// didIntersects[1] = 1;
 
-		// 						stage++;
-		// 						PolygonAddPoint(&workagon0, intersect);
-		// 						PolygonAddPoint(&workagon1, intersect);
+								stage++;
+								PolygonAddPoint(&workagon0, intersect);
+								PolygonAddPoint(&workagon1, intersect);
 								
-		// 						// intersects[1] = intersect;
-		// 					}
-		// 					break;
-		// 				}
-		// 			case 2:
-		// 				{
-		// 					PolygonAddPoint(&workagon0, polygons[s0].points[v]);
-		// 					break;
-		// 				}
-		// 			default:
-		// 				break;
-		// 			}
-		// 		}
-		// 		if (CheckCollisionPointPoly(seeds[s0], workagon0.points, workagon0.pointsCount))
-		// 		{
-		// 			Vector2 * temppoints = polygons[s0].points;
-		// 			uint16 temppointsCount = polygons[s0].pointsCount;
-		// 			uint16 temppointsCap = polygons[s0].pointsCap;
-		// 			polygons[s0].points = workagon0.points;
-		// 			polygons[s0].pointsCount = workagon0.pointsCount;
-		// 			polygons[s0].pointsCap = workagon0.pointsCap;
-		// 			workagon0.points = temppoints;
-		// 			workagon0.pointsCount = temppointsCount;
-		// 			workagon0.pointsCap = temppointsCap;
-		// 		}
-		// 		else
-		// 		{
-		// 			Vector2 * temppoints = polygons[s0].points;
-		// 			uint16 temppointsCount = polygons[s0].pointsCount;
-		// 			uint16 temppointsCap = polygons[s0].pointsCap;
-		// 			polygons[s0].points = workagon1.points;
-		// 			polygons[s0].pointsCount = workagon1.pointsCount;
-		// 			polygons[s0].pointsCap = workagon1.pointsCap;
-		// 			workagon1.points = temppoints;
-		// 			workagon1.pointsCount = temppointsCount;
-		// 			workagon1.pointsCap = temppointsCap;
-		// 		}
-		// 	}
-		// }
+								// intersects[1] = intersect;
+							}
+							break;
+						}
+					case 2:
+						{
+							PolygonAddPoint(&workagon0, polygons[s0].points[v]);
+							break;
+						}
+					default:
+						break;
+					}
+				}
+				if (CheckCollisionPointPoly(seeds[s0], workagon0.points, workagon0.pointsCount))
+				{
+					Vector2 * temppoints = polygons[s0].points;
+					uint16 temppointsCount = polygons[s0].pointsCount;
+					uint16 temppointsCap = polygons[s0].pointsCap;
+					polygons[s0].points = workagon0.points;
+					polygons[s0].pointsCount = workagon0.pointsCount;
+					polygons[s0].pointsCap = workagon0.pointsCap;
+					workagon0.points = temppoints;
+					workagon0.pointsCount = temppointsCount;
+					workagon0.pointsCap = temppointsCap;
+				}
+				else
+				{
+					Vector2 * temppoints = polygons[s0].points;
+					uint16 temppointsCount = polygons[s0].pointsCount;
+					uint16 temppointsCap = polygons[s0].pointsCap;
+					polygons[s0].points = workagon1.points;
+					polygons[s0].pointsCount = workagon1.pointsCount;
+					polygons[s0].pointsCap = workagon1.pointsCap;
+					workagon1.points = temppoints;
+					workagon1.pointsCount = temppointsCount;
+					workagon1.pointsCap = temppointsCap;
+				}
+			}
+		}
 
 		BeginDrawing();
 		ClearBackground(BLACK);
 
 		// Pixel by pixel draw voronoi
-		for (uint16 y = 0; y < BOARD_HEIGHT; y++)
-		{
-			for (uint16 x = 0; x < BOARD_WIDTH; x++)
-			{
-				uint16 closestSeed = 0;
-				float closestDist = (BOARD_WIDTH + BOARD_HEIGHT) * (BOARD_WIDTH + BOARD_HEIGHT);
-				for (uint16 i = 0; i < SEED_COUNT; i++)
-				{
-					float dist = Vector2DistanceSqr((Vector2){ (float)x, (float)y }, seeds[i]);
-					if (dist < closestDist)
-					{
-						closestDist = dist;
-						closestSeed = i;
-					}
-				}
-				float hue = (float)closestSeed / (float)SEED_COUNT;
-				Color col = ColorFromHSV(hue * 360.0f, 1.0f, 1.0f);
-				col.a = 100;
-				DrawPixel(x, y, col);
-			}
-		}
+		// for (uint16 y = 0; y < BOARD_HEIGHT; y++)
+		// {
+		// 	for (uint16 x = 0; x < BOARD_WIDTH; x++)
+		// 	{
+		// 		uint16 closestSeed = 0;
+		// 		float closestDist = (BOARD_WIDTH + BOARD_HEIGHT) * (BOARD_WIDTH + BOARD_HEIGHT);
+		// 		for (uint16 i = 0; i < SEED_COUNT; i++)
+		// 		{
+		// 			float dist = Vector2DistanceSqr((Vector2){ (float)x, (float)y }, seeds[i]);
+		// 			if (dist < closestDist)
+		// 			{
+		// 				closestDist = dist;
+		// 				closestSeed = i;
+		// 			}
+		// 		}
+		// 		float hue = (float)closestSeed / (float)SEED_COUNT;
+		// 		Color col = ColorFromHSV(hue * 360.0f, 1.0f, 1.0f);
+		// 		col.a = 100;
+		// 		DrawPixel(x, y, col);
+		// 	}
+		// }
 	
 
 		// Color colC = {255, 255, 0, 100};
 		// PolygonDraw(&polygons[1], colC);
 		
-		// // Draw Polygons
-		// for (uint16 i = 0; i < SEED_COUNT; i++)
-		// {
-		// 	Color col = ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f);
-		// 	col.a = 100;
-		// 	PolygonDraw(&polygons[i], col);
-		// 	// PolygonDrawLines(&polygons[i], WHITE);
-		// }
+		// Draw Polygons
+		for (uint16 i = 0; i < SEED_COUNT; i++)
+		{
+			Color col = ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f);
+			col.a = 100;
+			PolygonDraw(&polygons[i], col);
+			// PolygonDrawLines(&polygons[i], WHITE);
+		}
 		
 		// Draw seeds
 		for (uint16 i = 0; i < SEED_COUNT; i++)
