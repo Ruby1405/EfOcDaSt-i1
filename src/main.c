@@ -33,6 +33,13 @@ int main ()
 	// Tell the window to use vsync and work on high DPI displays
 	// SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
 
+	// Time profiling file
+	FILE * timeFile;
+	timeFile = fopen("output/time_profile.txt", "w");
+	fprintf(timeFile, "Time Profiling Log\n");
+	fprintf(timeFile, "Test\n");
+	fclose(timeFile);
+
 	// Detect screen size and use that for the window
 	// uint16 BOARD_WIDTH = GetScreenWidth();
 	// uint16 BOARD_HEIGHT = GetScreenHeight();
