@@ -33,6 +33,10 @@ int main ()
 	// Tell the window to use vsync and work on high DPI displays
 	// SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
 
+	// Detect screen size and use that for the window
+	// uint16 BOARD_WIDTH = GetScreenWidth();
+	// uint16 BOARD_HEIGHT = GetScreenHeight();
+
 	const uint16 BOARD_WIDTH = 1000;
 	const uint16 BOARD_HEIGHT = 1000;
 
@@ -48,6 +52,7 @@ int main ()
 
 	// ----------- my stuff ------------
 	const uint16 SEED_COUNT = 40;
+	const float SEED_SPEED = 50.0f;
 	Vector2 seeds[SEED_COUNT];
 	for (uint16 i = 0; i < SEED_COUNT; i++)
 	{
@@ -61,13 +66,10 @@ int main ()
 		seedVels[i].y = (float)(GetRandomValue(-2, 2));
 	}
 
-	// const uint16 DISECTORS_CAP_INIT = SEED_COUNT * 2;
-	// uint16 disectorsCap = DISECTORS_CAP_INIT;
-	// uint16 disectorsCount = 0;
-	// Disector *disectors = (Disector *)malloc(sizeof(Disector) * DISECTORS_CAP_INIT);
+	char manualSeedControl = 0;
 
 	Polygon polygons[SEED_COUNT];
-	
+
 	for (uint16 i = 0; i < SEED_COUNT; i++)
 	{
 		PolygonInit(&polygons[i]);
@@ -228,64 +230,94 @@ int main ()
 			Color col = ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f);
 			col.a = 100;
 			PolygonDraw(&polygons[i], col);
-			// PolygonDrawLines(&polygons[i], WHITE);
+			// PolygonDrawLines(&polygons[i], col);
 		}
 		
 		// Draw seeds
 		for (uint16 i = 0; i < SEED_COUNT; i++)
 		{
+			// Dots
 			DrawCircleV(seeds[i], 2.0, WHITE);
+
+			// Coloured numbers
+			// DrawCircleV(seeds[i], 7.0, BLACK);
+			// Color col = ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f);
+			// DrawText(TextFormat("%d", i + 1), (sint32)seeds[i].x - 3, (sint32)seeds[i].y - 5, 10, col);
 		}
 		
 		DrawFPS(10, 10);
 
 		EndDrawing();
 
-		// Get mouse input
-		// Vector2 mousePos = GetMousePosition();
-		// if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-		// {
-		// 	seeds[0] = mousePos;
-		// }
-		// if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
-		// {
-		// 	seeds[1] = mousePos;
-		// }
-
-		// Move seeds and bounce off walls
-		for (uint16 i = 0; i < SEED_COUNT; i++)
+		if (IsKeyPressed(KEY_SPACE))
 		{
-			seeds[i] = Vector2Add(seeds[i], Vector2Scale(seedVels[i], GetFrameTime() * 20));
-
-			seedVels[i].x = (
-				(-seedVels[i].x * (0 > seeds[i].x || BOARD_WIDTH <= seeds[i].x)) +
-				(seedVels[i].x * (0 <= seeds[i].x && BOARD_WIDTH > seeds[i].x))
-			);
-
-			seedVels[i].y = (
-				(-seedVels[i].y * (0 > seeds[i].y || BOARD_HEIGHT <= seeds[i].y)) +
-				(seedVels[i].y * (0 <= seeds[i].y && BOARD_HEIGHT > seeds[i].y))
-			);
-
-			seeds[i].x = (
-				(-seeds[i].x * (0 > seeds[i].x)) +
-				(seeds[i].x * (0 <= seeds[i].x))
-			);
-
-			seeds[i].y = (
-				(-seeds[i].y * (0 > seeds[i].y)) +
-				(seeds[i].y * (0 <= seeds[i].y))
-			);
-
-			seeds[i].x = (
-				((BOARD_WIDTH - (seeds[i].x - BOARD_WIDTH)) * (BOARD_WIDTH <= seeds[i].x)) +
-				(seeds[i].x * (BOARD_WIDTH > seeds[i].x))
-			);
-
-			seeds[i].y = (
-				((BOARD_HEIGHT - (seeds[i].y - BOARD_HEIGHT)) * (BOARD_HEIGHT <= seeds[i].y)) +
-				(seeds[i].y * (BOARD_HEIGHT > seeds[i].y))
-			);
+			manualSeedControl = !manualSeedControl;
+		}
+		if (manualSeedControl)
+		{
+			// Manual seed control
+			// Control over up to 22 seeds via keyboard
+			Vector2 mousePos = GetMousePosition();
+			sint32 key = GetKeyPressed();
+			sint32 selectedSeed = -1;
+			// numeric keys 1-9
+			if (key >= KEY_ONE && key <= KEY_NINE)
+			{
+				selectedSeed = key - KEY_ONE;
+			}
+			// numeric key 0 for seed 10
+			if (key == KEY_ZERO)
+			{
+				selectedSeed = 9;
+			}
+			// function keys F1-F12
+			if (key >= KEY_F1 && key <= KEY_F12)
+			{
+				selectedSeed = key - KEY_F1 + 10;
+			}
+			// if valid seed move it to mouse position
+			if (selectedSeed >= 0 && selectedSeed < SEED_COUNT)
+			{
+				seeds[selectedSeed] = mousePos;
+			}
+		}
+		else
+		{
+			// Automatic seed movement
+			for (uint16 i = 0; i < SEED_COUNT; i++)
+			{
+				seeds[i] = Vector2Add(seeds[i], Vector2Scale(seedVels[i], GetFrameTime() * SEED_SPEED));
+	
+				seedVels[i].x = (
+					(-seedVels[i].x * (0 > seeds[i].x || BOARD_WIDTH <= seeds[i].x)) +
+					(seedVels[i].x * (0 <= seeds[i].x && BOARD_WIDTH > seeds[i].x))
+				);
+	
+				seedVels[i].y = (
+					(-seedVels[i].y * (0 > seeds[i].y || BOARD_HEIGHT <= seeds[i].y)) +
+					(seedVels[i].y * (0 <= seeds[i].y && BOARD_HEIGHT > seeds[i].y))
+				);
+	
+				seeds[i].x = (
+					(-seeds[i].x * (0 > seeds[i].x)) +
+					(seeds[i].x * (0 <= seeds[i].x))
+				);
+	
+				seeds[i].y = (
+					(-seeds[i].y * (0 > seeds[i].y)) +
+					(seeds[i].y * (0 <= seeds[i].y))
+				);
+	
+				seeds[i].x = (
+					((BOARD_WIDTH - (seeds[i].x - BOARD_WIDTH)) * (BOARD_WIDTH <= seeds[i].x)) +
+					(seeds[i].x * (BOARD_WIDTH > seeds[i].x))
+				);
+	
+				seeds[i].y = (
+					((BOARD_HEIGHT - (seeds[i].y - BOARD_HEIGHT)) * (BOARD_HEIGHT <= seeds[i].y)) +
+					(seeds[i].y * (BOARD_HEIGHT > seeds[i].y))
+				);
+			}
 		}
 	}
 
