@@ -19,15 +19,6 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 #include "polygon.h"
 #include "myMath.h"
 
-// typedef struct Disector
-// {
-// 	uint16 seedA;
-// 	uint16 seedB;
-// 	Vector2 pointA;
-// 	Vector2 pointB;
-// } Disector;
-
-
 int main ()
 {
 	// Tell the window to use vsync and work on high DPI displays
