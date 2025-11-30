@@ -8,16 +8,25 @@
 // Float Equality Margin
 const float FEM = 0.0001f;
 
+/// @brief Returns the maximum of two float values
 float MaxFloat(float a, float b)
 {
     return (a * (a >= b)) + (b * (b > a));
 }
 
+/// @brief Returns the minimum of two float values
 float MinFloat(float a, float b)
 {
     return (a * (a <= b)) + (b * (b < a));
 }
 
+/// @brief Checks for intersection between two infinite lines defined by a point and a direction vector each.
+/// @param aP point on line A
+/// @param aV direction vector of line A
+/// @param bP point on line B
+/// @param bV direction vector of line B
+/// @param intersect pointer to store the intersection point if it exists
+/// @return 1 if the lines intersect, 0 if they are parallel
 uint16 CollisionLineLinePV(Vector2 aP, Vector2 aV, Vector2 bP, Vector2 bV, Vector2 *intersect)
 {
     float dot = Vector2DotProduct(aV, bV);
@@ -29,6 +38,14 @@ uint16 CollisionLineLinePV(Vector2 aP, Vector2 aV, Vector2 bP, Vector2 bV, Vecto
     return 1;
 }
 
+
+/// @brief Checks for intersection between two infinite lines defined by two points each.
+/// @param aA first point on line A
+/// @param aB second point on line A
+/// @param bA first point on line B
+/// @param bB second point on line B
+/// @param intersect pointer to store the intersection point if it exists
+/// @return 1 if the lines intersect, 0 if they are parallel
 uint16 CollisionLineLinePP(Vector2 aA, Vector2 aB, Vector2 bA, Vector2 bB, Vector2 *intersect)
 {
     Vector2 aV = Vector2Subtract(aB, aA);
@@ -36,6 +53,13 @@ uint16 CollisionLineLinePP(Vector2 aA, Vector2 aB, Vector2 bA, Vector2 bB, Vecto
     return CollisionLineLinePV(aA, aV, bA, bV, intersect);
 }
 
+/// @brief Checks for intersection between an infinite line and a line segment.
+/// @param aP point on the infinite line
+/// @param aV direction vector of the infinite line
+/// @param bA first end of the line segment
+/// @param bB second end of the line segment
+/// @param intersect pointer to store the intersection point if it exists
+/// @return 1 if the line and segment intersect, 0 otherwise
 uint16 CollisionLineLineSegmentPVPP(Vector2 aP, Vector2 aV, Vector2 bA, Vector2 bB, Vector2 *intersect)
 {
     // Broad phase unsegmented line check
@@ -63,6 +87,13 @@ uint16 CollisionLineLineSegmentPVPP(Vector2 aP, Vector2 aV, Vector2 bA, Vector2 
     return 1;
 }
 
+/// @brief Checks for intersection between a ray and an infinite line.
+/// @param rayOrigin origin point of the ray
+/// @param rayDirection direction vector of the ray
+/// @param lineA first point on the line
+/// @param lineB second point on the line
+/// @param intersect pointer to store the intersection point if it exists
+/// @return 1 if the ray and line intersect, 0 otherwise
 uint16 CollisionRayLine(Vector2 rayOrigin, Vector2 rayDirection, Vector2 lineA, Vector2 lineB, Vector2 *intersect)
 {
     Vector2 lineDirection = Vector2Subtract(lineB, lineA);
@@ -86,6 +117,13 @@ uint16 CollisionRayLine(Vector2 rayOrigin, Vector2 rayDirection, Vector2 lineA, 
     return 1;
 }
 
+/// @brief Checks for intersection between a ray and a line segment.
+/// @param rayOrigin origin point of the ray
+/// @param rayDirection direction vector of the ray
+/// @param lineA first end of the line segment
+/// @param lineB second end of the line segment
+/// @param intersect pointer to store the intersection point if it exists
+/// @return 1 if the ray and line segment intersect, 0 otherwise
 uint16 CollisionRayLineSegment(Vector2 rayOrigin, Vector2 rayDirection, Vector2 lineA, Vector2 lineB, Vector2 *intersect)
 {
     // Broad phase unsegmented line check

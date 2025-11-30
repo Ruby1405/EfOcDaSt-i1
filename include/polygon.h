@@ -13,6 +13,8 @@ typedef struct Polygon
 	Vector2 *points;
 } Polygon;
 
+/// @brief Initializes a polygon structure and allocates initial memory for its points.
+/// @param poly Pointer to the polygon to initialize
 void PolygonInit(Polygon *poly)
 {
     poly->pointsCap = POLYGON_CAP_INIT;
@@ -21,6 +23,9 @@ void PolygonInit(Polygon *poly)
     return;
 }
 
+/// @brief Adds a point to the polygon, resizing the points array if necessary.
+/// @param poly Pointer to the polygon
+/// @param point The point to add
 void PolygonAddPoint(Polygon *poly, Vector2 point)
 {
 	if (poly->pointsCount >= poly->pointsCap)
@@ -33,6 +38,10 @@ void PolygonAddPoint(Polygon *poly, Vector2 point)
 	return;
 }
 
+/// @brief Adds a point to the polygon at a specified index, resizing the points array if necessary.
+/// @param poly Pointer to the polygon
+/// @param point The point to add
+/// @param index The index at which to add the point
 void PolygonAddPointAt(Polygon *poly, Vector2 point, uint16 index)
 {
     if (poly->pointsCount >= poly->pointsCap)
@@ -49,6 +58,8 @@ void PolygonAddPointAt(Polygon *poly, Vector2 point, uint16 index)
     return;
 }
 
+/// @brief Removes the last point from the polygon.
+/// @param poly Pointer to the polygon
 void PolygonRemovePoint(Polygon *poly)
 {
     if (poly->pointsCount == 0)
@@ -59,6 +70,9 @@ void PolygonRemovePoint(Polygon *poly)
     return;
 }
 
+/// @brief Removes a point from the polygon at a specified index.
+/// @param poly Pointer to the polygon
+/// @param index The index of the point to remove
 void PolygonRemovePointAt(Polygon *poly, uint16 index)
 {
     for (uint16 i = index; i < poly->pointsCount - 1; i++)
@@ -69,12 +83,16 @@ void PolygonRemovePointAt(Polygon *poly, uint16 index)
     return;
 }
 
+/// @brief Clears all points from the polygon. (O(1), does not free memory)
+/// @param poly Pointer to the polygon
 void PolygonClear(Polygon *poly)
 {
     poly->pointsCount = 0;
     return;
 }
 
+/// @brief Frees the memory allocated for the polygon's points and resets its properties.
+/// @param poly Pointer to the polygon
 void PolygonFree(Polygon *poly)
 {
     free(poly->points);
@@ -84,6 +102,9 @@ void PolygonFree(Polygon *poly)
     return;
 }
 
+/// @brief Draws the outline of the polygon using lines.
+/// @param poly Pointer to the polygon
+/// @param col Color to draw the lines
 void PolygonDrawLines(Polygon *poly, Color col)
 {
     for (uint16 i = 0; i < poly->pointsCount; i++)
@@ -95,6 +116,9 @@ void PolygonDrawLines(Polygon *poly, Color col)
     return;
 }
 
+/// @brief Draws the filled polygon using a triangle fan.
+/// @param poly Pointer to the polygon
+/// @param col Color to fill the polygon
 void PolygonDraw(Polygon *poly, Color col)
 {
     // for (uint16 i = 1; i < poly->pointsCount - 1; i++)
