@@ -9,6 +9,7 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 
 #include <stdlib.h>     
 #include <stdio.h>
+#include <time.h>
 
 #include "raylib.h"
 #include "raymath.h"
@@ -26,10 +27,7 @@ int main ()
 
 	// Time profiling file
 	FILE * timeFile;
-	timeFile = fopen("output/time_profile.txt", "w");
-	fprintf(timeFile, "Time Profiling Log\n");
-	fprintf(timeFile, "Test\n");
-	fclose(timeFile);
+	timeFile = fopen("output/time_profile.csv", "w");
 
 	// Detect screen size and use that for the window
 	// uint16 BOARD_WIDTH = GetScreenWidth();
@@ -49,16 +47,17 @@ int main ()
 	// Texture wabbit = LoadTexture("wabbit_alpha.png");
 
 	// ----------- my stuff ------------
-	const uint16 SEED_COUNT = 40;
-	const float SEED_SPEED = 50.0f;
-	Vector2 seeds[SEED_COUNT];
-	for (uint16 i = 0; i < SEED_COUNT; i++)
+	const uint16 MAX_SEED_COUNT = 1000;
+	uint16 SEED_COUNT = 1;
+	const float SEED_SPEED = 20.0f;
+	Vector2 seeds[MAX_SEED_COUNT];
+	for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
 	{
 		seeds[i].x = (float)(GetRandomValue(0, BOARD_WIDTH));
 		seeds[i].y = (float)(GetRandomValue(0, BOARD_HEIGHT));
 	}
-	Vector2 seedVels[SEED_COUNT];
-	for (uint16 i = 0; i < SEED_COUNT; i++)
+	Vector2 seedVels[MAX_SEED_COUNT];
+	for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
 	{
 		seedVels[i].x = (float)(GetRandomValue(-2, 2));
 		seedVels[i].y = (float)(GetRandomValue(-2, 2));
@@ -66,9 +65,9 @@ int main ()
 
 	char manualSeedControl = 0;
 
-	Polygon polygons[SEED_COUNT];
+	Polygon polygons[MAX_SEED_COUNT];
 
-	for (uint16 i = 0; i < SEED_COUNT; i++)
+	for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
 	{
 		PolygonInit(&polygons[i]);
 	}
@@ -77,9 +76,20 @@ int main ()
 	PolygonInit(&workagon0);
 	Polygon workagon1;
 	PolygonInit(&workagon1);
+
+	const uint16 SAMPLES_PER_COUNT = 20;
+	uint16 sampleCounter = 0;
 	
 	while (!WindowShouldClose())
 	{	
+		SEED_COUNT += (sampleCounter >= SAMPLES_PER_COUNT);
+		sampleCounter = sampleCounter + 1 - (sampleCounter >= SAMPLES_PER_COUNT) * SAMPLES_PER_COUNT;
+		if (SEED_COUNT > MAX_SEED_COUNT) break;
+
+		// struct timespec startTime;
+		// timespec_get(&startTime, 1);
+		clock_t startTime = clock();
+
 		// Polygon construction attempt
 
 		// uint16 s0 = 0;
@@ -192,6 +202,10 @@ int main ()
 			}
 		}
 
+		// struct timespec endComputeTime;
+		// timespec_get(&endComputeTime, 1);
+		clock_t endComputeTime = clock();
+
 		BeginDrawing();
 		ClearBackground(BLACK);
 
@@ -230,6 +244,10 @@ int main ()
 			PolygonDraw(&polygons[i], col);
 			// PolygonDrawLines(&polygons[i], col);
 		}
+
+		// struct timespec endDrawTime;
+		// timespec_get(&endDrawTime, 1);
+		clock_t endDrawTime = clock();
 		
 		// Draw seeds
 		for (uint16 i = 0; i < SEED_COUNT; i++)
@@ -317,6 +335,18 @@ int main ()
 				);
 			}
 		}
+
+		// Time profiling
+		// fprintf(timeFile, "%u,%llu,%llu\n",
+		// 	SEED_COUNT,
+		// 	((endComputeTime.tv_sec - startTime.tv_sec) * 1000000000ULL) + (endComputeTime.tv_nsec - startTime.tv_nsec),
+		// 	((endDrawTime.tv_sec - startTime.tv_sec) * 1000000000ULL) + (endDrawTime.tv_nsec - startTime.tv_nsec)
+		// );
+		fprintf(timeFile, "%u,%llu,%llu\n",
+			SEED_COUNT,
+			(endComputeTime - startTime),
+			(endDrawTime - startTime)
+		);
 	}
 
 	// // cleanup
@@ -325,5 +355,8 @@ int main ()
 
 	// destroy the window and cleanup the OpenGL context
 	CloseWindow();
+
+	fclose(timeFile);
+
 	return 0;
 }
