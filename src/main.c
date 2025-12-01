@@ -202,10 +202,6 @@ int main ()
 			}
 		}
 
-		// struct timespec endComputeTime;
-		// timespec_get(&endComputeTime, 1);
-		clock_t endComputeTime = clock();
-
 		BeginDrawing();
 		ClearBackground(BLACK);
 
@@ -245,9 +241,9 @@ int main ()
 			// PolygonDrawLines(&polygons[i], col);
 		}
 
-		// struct timespec endDrawTime;
-		// timespec_get(&endDrawTime, 1);
-		clock_t endDrawTime = clock();
+		// struct timespec endTime;
+		// timespec_get(&endTime, 1);
+		clock_t endTime = clock();
 		
 		// Draw seeds
 		for (uint16 i = 0; i < SEED_COUNT; i++)
@@ -340,12 +336,11 @@ int main ()
 		// fprintf(timeFile, "%u,%llu,%llu\n",
 		// 	SEED_COUNT,
 		// 	((endComputeTime.tv_sec - startTime.tv_sec) * 1000000000ULL) + (endComputeTime.tv_nsec - startTime.tv_nsec),
-		// 	((endDrawTime.tv_sec - startTime.tv_sec) * 1000000000ULL) + (endDrawTime.tv_nsec - startTime.tv_nsec)
+		// 	((endTime.tv_sec - startTime.tv_sec) * 1000000000ULL) + (endTime.tv_nsec - startTime.tv_nsec)
 		// );
-		fprintf(timeFile, "%u,%llu,%llu\n",
+		fprintf(timeFile, "%u,%llu\n",
 			SEED_COUNT,
-			(endComputeTime - startTime),
-			(endDrawTime - startTime)
+			(endTime - startTime)
 		);
 	}
 
