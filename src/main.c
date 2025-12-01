@@ -65,6 +65,7 @@ int main ()
 
 	char manualSeedControl = 0;
 
+	// ------------- polygon sollution --------------
 	Polygon polygons[MAX_SEED_COUNT];
 
 	for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
@@ -76,6 +77,7 @@ int main ()
 	PolygonInit(&workagon0);
 	Polygon workagon1;
 	PolygonInit(&workagon1);
+	// ---------------------------------------------
 
 	const uint16 SAMPLES_PER_COUNT = 20;
 	uint16 sampleCounter = 0;
@@ -86,13 +88,10 @@ int main ()
 		sampleCounter = sampleCounter + 1 - (sampleCounter >= SAMPLES_PER_COUNT) * SAMPLES_PER_COUNT;
 		if (SEED_COUNT > MAX_SEED_COUNT) break;
 
-		// struct timespec startTime;
-		// timespec_get(&startTime, 1);
 		clock_t startTime = clock();
 
-		// Polygon construction attempt
+		// ------------- polygon sollution --------------
 
-		// uint16 s0 = 0;
 		for (uint16 s0 = 0; s0 < SEED_COUNT; s0++)
 		{
 
@@ -232,7 +231,7 @@ int main ()
 		// Color colC = {255, 255, 0, 100};
 		// PolygonDraw(&polygons[1], colC);
 		
-		// Draw Polygons
+		// ------------- polygon sollution --------------
 		for (uint16 i = 0; i < SEED_COUNT; i++)
 		{
 			Color col = ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f);
@@ -240,9 +239,8 @@ int main ()
 			PolygonDraw(&polygons[i], col);
 			// PolygonDrawLines(&polygons[i], col);
 		}
+		// ---------------------------------------------
 
-		// struct timespec endTime;
-		// timespec_get(&endTime, 1);
 		clock_t endTime = clock();
 		
 		// Draw seeds
