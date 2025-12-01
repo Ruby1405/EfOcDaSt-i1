@@ -40,12 +40,6 @@ int main ()
 	
 	// ToggleFullscreen();
 
-	// // Utility function from resource_dir.h to find the resources folder and set it as the current working directory so we can load from it
-	// SearchAndSetResourceDir("resources");
-
-	// // Load a texture from the resources directory
-	// Texture wabbit = LoadTexture("wabbit_alpha.png");
-
 	// ----------- my stuff ------------
 	const uint16 MAX_SEED_COUNT = 1000;
 	uint16 SEED_COUNT = 1;
@@ -114,9 +108,6 @@ int main ()
 				Vector2 midpoint = Vector2Scale(Vector2Add(seeds[s0], seeds[s1]), 0.5f);
 				Vector2 disectV = {seeds[s0].y - seeds[s1].y, - seeds[s0].x + seeds[s1].x};
 				
-				// Vector2 intersects[2] = {(Vector2){0,0}, (Vector2){0,0}};
-				// uint16 didIntersects[2] = {0,0};
-				
 				PolygonClear(&workagon0);
 				
 				uint16 stage = 0;
@@ -134,14 +125,11 @@ int main ()
 							
 							if (CollisionLineLineSegmentPVPP(midpoint, disectV, v0, v1, &intersect))
 							{
-								// didIntersects[0] = 1;
 
 								stage++;
 								PolygonAddPoint(&workagon0, intersect);
 								PolygonClear(&workagon1);
 								PolygonAddPoint(&workagon1, intersect);
-								
-								// intersects[0] = intersect;
 							}
 							break;
 						}
@@ -155,13 +143,9 @@ int main ()
 							Vector2 intersect;
 							if (CollisionLineLineSegmentPVPP(midpoint, disectV, v0, v1, &intersect))
 							{
-								// didIntersects[1] = 1;
-
 								stage++;
 								PolygonAddPoint(&workagon0, intersect);
 								PolygonAddPoint(&workagon1, intersect);
-								
-								// intersects[1] = intersect;
 							}
 							break;
 						}
@@ -229,9 +213,6 @@ int main ()
 		// }
 		// ---------------------------------------------
 	
-
-		// Color colC = {255, 255, 0, 100};
-		// PolygonDraw(&polygons[1], colC);
 		
 		// ------------- polygon sollution --------------
 		for (uint16 i = 0; i < SEED_COUNT; i++)
@@ -332,21 +313,11 @@ int main ()
 			}
 		}
 
-		// Time profiling
-		// fprintf(timeFile, "%u,%llu,%llu\n",
-		// 	SEED_COUNT,
-		// 	((endComputeTime.tv_sec - startTime.tv_sec) * 1000000000ULL) + (endComputeTime.tv_nsec - startTime.tv_nsec),
-		// 	((endTime.tv_sec - startTime.tv_sec) * 1000000000ULL) + (endTime.tv_nsec - startTime.tv_nsec)
-		// );
 		fprintf(timeFile, "%u,%llu\n",
 			SEED_COUNT,
 			(endTime - startTime)
 		);
 	}
-
-	// // cleanup
-	// // unload our texture so it can be cleaned up
-	// UnloadTexture(wabbit);
 
 	// destroy the window and cleanup the OpenGL context
 	CloseWindow();
