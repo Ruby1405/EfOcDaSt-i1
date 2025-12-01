@@ -204,6 +204,7 @@ int main ()
 		BeginDrawing();
 		ClearBackground(BLACK);
 
+		// ------------- pixel sollution --------------
 		// Pixel by pixel draw voronoi
 		// for (uint16 y = 0; y < BOARD_HEIGHT; y++)
 		// {
@@ -226,6 +227,7 @@ int main ()
 		// 		DrawPixel(x, y, col);
 		// 	}
 		// }
+		// ---------------------------------------------
 	
 
 		// Color colC = {255, 255, 0, 100};
