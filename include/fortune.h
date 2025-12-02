@@ -131,7 +131,50 @@ Node * EdgeListAdd(EdgeList * el, Edge e)
     return &el->edges[el->size - 1];
 }
 
+void EdgeListClear(EdgeList * el)
+{
+    el->size = 0;
+}
+
 void EdgeListFree(EdgeList * el)
+{
+    free(el->edges);
+    el->edges = NULL;
+    el->size = 0;
+    el->capacity = 0;
+}
+
+typedef struct PEdgeList
+{
+    Edge ** edges;
+    uint16 size;
+    uint16 capacity;
+} PEdgeList;
+
+void PEdgeListInit(PEdgeList * el, uint16 capacity)
+{
+    el->size = 0;
+    el->capacity = capacity;
+    el->edges = (Edge **)malloc(sizeof(Edge *) * el->capacity);
+}
+
+void PEdgeListAdd(PEdgeList * el, Edge * e)
+{
+    if (el->size >= el->capacity)
+    {
+        el->capacity *= 2;
+        el->edges = (Edge **)realloc(el->edges, sizeof(Edge *) * el->capacity);
+    }
+    el->edges[el->size] = e;
+    el->size++;
+}
+
+void PEdgeListClear(PEdgeList * el)
+{
+    el->size = 0;
+}
+
+void PEdgeListFree(PEdgeList * el)
 {
     free(el->edges);
     el->edges = NULL;
@@ -181,7 +224,50 @@ Node * NodeListAdd(NodeList * nl, Node n)
     return &nl->nodes[nl->size - 1];
 }
 
+void NodeListClear(NodeList * nl)
+{
+    nl->size = 0;
+}
+
 void NodeListFree(NodeList * nl)
+{
+    free(nl->nodes);
+    nl->nodes = NULL;
+    nl->size = 0;
+    nl->capacity = 0;
+}
+
+typedef struct PNodeList
+{
+    Node ** nodes;
+    uint16 size;
+    uint16 capacity;
+} PNodeList;
+
+void PNodeListInit(PNodeList * nl, uint16 capacity)
+{
+    nl->size = 0;
+    nl->capacity = capacity;
+    nl->nodes = (Node **)malloc(sizeof(Node *) * nl->capacity);
+}
+
+void PNodeListAdd(PNodeList * nl, Node * n)
+{
+    if (nl->size >= nl->capacity)
+    {
+        nl->capacity *= 2;
+        nl->nodes = (Node **)realloc(nl->nodes, sizeof(Node *) * nl->capacity);
+    }
+    nl->nodes[nl->size] = n;
+    nl->size++;
+}
+
+void PNodeListClear(PNodeList * nl)
+{
+    nl->size = 0;
+}
+
+void PNodeListFree(PNodeList * nl)
 {
     free(nl->nodes);
     nl->nodes = NULL;
@@ -222,39 +308,6 @@ void Vector2ListFree(Vector2List * vl)
     vl->points = NULL;
     vl->size = 0;
     vl->capacity = 0;
-}
-
-typedef struct PEdgeList
-{
-    Edge ** edges;
-    uint16 size;
-    uint16 capacity;
-} PEdgeList;
-
-void PEdgeListInit(PEdgeList * el, uint16 capacity)
-{
-    el->size = 0;
-    el->capacity = capacity;
-    el->edges = (Edge **)malloc(sizeof(Edge *) * el->capacity);
-}
-
-void PEdgeListAdd(PEdgeList * el, Edge * e)
-{
-    if (el->size >= el->capacity)
-    {
-        el->capacity *= 2;
-        el->edges = (Edge **)realloc(el->edges, sizeof(Edge *) * el->capacity);
-    }
-    el->edges[el->size] = e;
-    el->size++;
-}
-
-void PEdgeListFree(PEdgeList * el)
-{
-    free(el->edges);
-    el->edges = NULL;
-    el->size = 0;
-    el->capacity = 0;
 }
 
 typedef struct VoronoiGraph
@@ -372,7 +425,8 @@ Node * ProcessSeedEvent(
     VoronoiGraph * voronoiGraph,
     Vector2 seed,
     Node * rootNode,
-    float ys
+    float ys,
+    PNodeList * circleCheckList
 )
 {
     // If tree is empty, insert the first arc
@@ -388,6 +442,8 @@ Node * ProcessSeedEvent(
         });
 
         // Circle check list
+        PNodeListClear(circleCheckList);
+        PNodeListAdd(circleCheckList, rootNode);
         return rootNode;
     }
 
@@ -454,6 +510,9 @@ Node * ProcessSeedEvent(
             });
         }
         // Circle check list
+        PNodeListClear(circleCheckList);
+        PNodeListAdd(circleCheckList, subRoot->left);
+        PNodeListAdd(circleCheckList, subRoot->right);
     }
     else
     {
@@ -493,6 +552,10 @@ Node * ProcessSeedEvent(
             .parent = NULL
         });
         // Circle check list
+        PNodeListClear(circleCheckList);
+        PNodeListAdd(circleCheckList, subRoot->left);
+        PNodeListAdd(circleCheckList, subRoot->right->left);
+        PNodeListAdd(circleCheckList, subRoot->right->right);
     }
 
     // Rewire tree
@@ -510,7 +573,8 @@ Node * ProcessCircleEvent(
     VoronoiGraph * voronoiGraph,
     Event circleEvent,
     Node * rootNode,
-    float ys
+    float ys,
+    PNodeList * circleCheckList
 )
 {
     Node * sa, * sb, * sc;
@@ -529,11 +593,15 @@ Node * ProcessCircleEvent(
     )
     {
         // Circle check list
+        PNodeListClear(circleCheckList);
         return rootNode;
     }
 
     ea = sb->parent;
     // Circle check list
+    PNodeListClear(circleCheckList);
+    PNodeListAdd(circleCheckList, sa);
+    PNodeListAdd(circleCheckList, sc);
 
     // Create new vertex
     Vector2 vertex = circleEvent.point;

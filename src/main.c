@@ -85,6 +85,8 @@ int main ()
 	NodeListInit(&nodeAlloc, 32);
 	BinaryPriorityQueue PQ;
 	BPQInit(&PQ, 32);
+	PNodeList circleCheckList;
+	PNodeListInit(&circleCheckList, 32);
 	// Hashtable CurrentArcs;
 	VoronoiGraph voronoiGraph;
 	VGInit(&voronoiGraph, 32);
@@ -232,7 +234,8 @@ int main ()
 					&voronoiGraph,
 					nextEvent.point,
 					rootNode,
-					nextEvent.point.y
+					nextEvent.point.y,
+					&circleCheckList
 				);
 			}
 			else
@@ -246,8 +249,20 @@ int main ()
 					&voronoiGraph,
 					nextEvent,
 					rootNode,
-					nextEvent.point.y // possibly wrong
+					nextEvent.point.y, // possibly wrong
+					&circleCheckList
 				);
+			}
+			
+			for (uint8 i = 0; i < circleCheckList.size; i++)
+			{
+				
+			}
+
+			if (nextEvent.type == 'S')
+			{
+				Vector2 point = nextEvent.point;
+				
 			}
 			
 		}
