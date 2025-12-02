@@ -16,11 +16,11 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 
 #include "resource_dir.h"	// utility header for SearchAndSetResourceDir
 
-#include "definitions.h"
+// #include "definitions.h"
 #include "polygon.h"
 #include "fortune.h"
 #include "priorityQueue.h"
-#include "myMath.h"
+// #include "myMath.h"
 
 int main ()
 {
@@ -28,8 +28,8 @@ int main ()
 	// SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
 
 	// Time profiling file
-	FILE * timeFile;
-	timeFile = fopen("output/time_profile.csv", "w");
+	// FILE * timeFile;
+	// timeFile = fopen("output/time_profile.csv", "w");
 
 	// Detect screen size and use that for the window
 	// uint16 BOARD_WIDTH = GetScreenWidth();
@@ -43,8 +43,8 @@ int main ()
 	// ToggleFullscreen();
 
 	// ----------- my stuff ------------
-	const uint16 MAX_SEED_COUNT = 1000;
-	uint16 SEED_COUNT = 1;
+	const uint16 MAX_SEED_COUNT = 10;
+	uint16 SEED_COUNT = 10;
 	const float SEED_SPEED = 20.0f;
 	Vector2 seeds[MAX_SEED_COUNT];
 	for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
@@ -80,29 +80,33 @@ int main ()
 	#pragma region FortuneSollution
 	// ------------- Fortune's algorithm sollution --------------
 	EdgeList edgeAlloc;
-	EdgeListInit(&edgeAlloc, 32);
+	EdgeListInit(&edgeAlloc, 256);
 	NodeList nodeAlloc;
-	NodeListInit(&nodeAlloc, 32);
+	NodeListInit(&nodeAlloc, 256);
+	EventList eventAlloc;
+	EventListInit(&eventAlloc, 256);
 	BinaryPriorityQueue PQ;
-	BPQInit(&PQ, 32);
+	BPQInit(&PQ, 256);
 	PNodeList circleCheckList;
-	PNodeListInit(&circleCheckList, 32);
+	PNodeListInit(&circleCheckList, 256);
 	// Hashtable CurrentArcs;
+	CircleList currentCircles;
+	CircleListInit(&currentCircles, 256);
 	VoronoiGraph voronoiGraph;
-	VGInit(&voronoiGraph, 32);
+	VGInit(&voronoiGraph, 256);
 	// ----------------------------------------------------------
 	#pragma endregion
 
 	const uint16 SAMPLES_PER_COUNT = 20;
-	uint16 sampleCounter = 0;
+	// uint16 sampleCounter = 0;
 	
 	while (!WindowShouldClose())
 	{	
-		SEED_COUNT += (sampleCounter >= SAMPLES_PER_COUNT);
-		sampleCounter = sampleCounter + 1 - (sampleCounter >= SAMPLES_PER_COUNT) * SAMPLES_PER_COUNT;
-		if (SEED_COUNT > MAX_SEED_COUNT) break;
+		// SEED_COUNT += (sampleCounter >= SAMPLES_PER_COUNT);
+		// sampleCounter = sampleCounter + 1 - (sampleCounter >= SAMPLES_PER_COUNT) * SAMPLES_PER_COUNT;
+		// if (SEED_COUNT > MAX_SEED_COUNT) break;
 
-		clock_t startTime = clock();
+		// clock_t startTime = clock();
 
 		#pragma region PolygonSollution
 		// ------------- polygon sollution --------------
@@ -207,12 +211,20 @@ int main ()
 		// ---------------------------------------------
 		#pragma endregion
 
+		#pragma region FortuneSollution
 		// ------------- Fortune's algorithm sollution --------------
 		Node * rootNode = NULL;
+		EdgeListClear(&edgeAlloc);
+		NodeListClear(&nodeAlloc);
+		EventListClear(&eventAlloc);
+		BPQClear(&PQ);
+		PNodeListClear(&circleCheckList);
+		CircleListClear(&currentCircles);
+		VGClear(&voronoiGraph);
 		
 		for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
 		{
-			BPQPush(&PQ, (Event){
+			Event * e = EventListAdd(&eventAlloc, (Event){
 				.type = 'S',
 				.point = seeds[i],
 				.nodeP = NULL,
@@ -220,53 +232,150 @@ int main ()
 				.nodeR = NULL,
 				.valid = 1
 			});
+			BPQPush(&PQ, e);
 		}
 		while (PQ.size > 0)
 		{
-			Event nextEvent = BPQPop(&PQ);
-
-			if (nextEvent.type == 'S')
+			Event * nextEvent = BPQPop(&PQ);
+			if (nextEvent->type == 'S')
 			{
 				// Handle seed event
-				ProcessSeedEvent(
+				rootNode = ProcessSeedEvent(
 					&edgeAlloc,
 					&nodeAlloc,
 					&voronoiGraph,
-					nextEvent.point,
+					nextEvent->point,
 					rootNode,
-					nextEvent.point.y,
+					nextEvent->point.y,
+					&circleCheckList
+				);
+			}
+			else if(nextEvent->type == 'C')
+			{
+				// Handle circle event
+				// Current circles
+				CircleListRemoveAt(&currentCircles, CircleListContainsNode(&currentCircles, nextEvent->nodeP));
+				if(!nextEvent->valid) continue;
+				rootNode = ProcessCircleEvent(
+					&edgeAlloc,
+					&nodeAlloc,
+					&voronoiGraph,
+					*nextEvent,
+					rootNode,
+					CircleEventY(nextEvent),
 					&circleCheckList
 				);
 			}
 			else
 			{
-				// Handle circle event
-				// Current circles
-				if(!nextEvent.valid) continue;
-				rootNode = ProcessCircleEvent(
-					&edgeAlloc,
-					&nodeAlloc,
-					&voronoiGraph,
-					nextEvent,
-					rootNode,
-					nextEvent.point.y, // possibly wrong
-					&circleCheckList
-				);
+				// Invalid event type
+				printf("Invalid event type encountered: %c\n", nextEvent->type);
+				continue;
 			}
 			
 			for (uint8 i = 0; i < circleCheckList.size; i++)
 			{
-				
+				Node * node = circleCheckList.nodes[i];
+				sint16 cIndex = CircleListContainsNode(&currentCircles, node);
+				if (cIndex >= 0)
+				{
+					currentCircles.events[cIndex]->valid = 0;
+					CircleListRemoveAt(&currentCircles, cIndex);
+				}
+				Event * nE = CircleCheckSeedNode(
+					&eventAlloc,
+					node,
+					nextEvent->type == 'S' ? nextEvent->point.y : CircleEventY(nextEvent)
+				);
+				if (nE != NULL)
+				{
+					BPQPush(&PQ, nE);
+					CircleListAdd(&currentCircles, node, nE);
+				}
 			}
 
-			if (nextEvent.type == 'S')
+			if (nextEvent->type == 'S')
 			{
-				Vector2 point = nextEvent.point;
+				Vector2 point = nextEvent->point;
+				for (uint16 i = 0; i < currentCircles.size; i++)
+				{
+					float dist1 = Vector2Distance(
+						point,
+						currentCircles.events[i]->center
+					);
+					float dist2 = CircleEventY(currentCircles.events[i]) - currentCircles.events[i]->center.y;
+					if (
+						dist1 < dist2 &&
+						fabsf(dist1 - dist2) > FEM
+					) currentCircles.events[i]->valid = 0;
+				}
 				
 			}
-			
 		}
+		CleanUpTree(rootNode);
+
+		for (uint16 i = 0; i < voronoiGraph.edges.size; i++)
+		{
+			Edge * edge = voronoiGraph.edges.edges[i];
+			if (edge->done) continue;
+			if (Vector2Equals(edge->vertexB, VERTEX_UNKNOWN))
+			{
+				EdgeAddVertex(edge, VERTEX_INFINITE);
+
+				if (fabsf(edge->leftPoint.y - edge->rightPoint.y) < FEM && 
+					edge->leftPoint.x < edge->rightPoint.x)
+				{
+					Vector2 temp = edge->leftPoint;
+					edge->leftPoint = edge->rightPoint;
+					edge->rightPoint = temp;
+				}
+			}
+		}
+
+		uint16 minuteEdgeCount = 0;
+		uint16 minuteEdgeCap = 16;
+		Edge ** minuteEdges = (Edge **)malloc(sizeof(Edge *) * minuteEdgeCap);
+		uint16 * minuteEdgeIndices = (uint16 *)malloc(sizeof(uint16) * minuteEdgeCap);
+		for (uint16 i = 0; i < voronoiGraph.edges.size; i++)
+		{
+			Edge * edge = voronoiGraph.edges.edges[i];
+			if (!EdgeIsPartlyInfinite(edge) && Vector2Equals(edge->vertexA, edge->vertexB))
+			{
+				// Add edge to minuteEdges
+				if (minuteEdgeCount >= minuteEdgeCap)
+				{
+					minuteEdgeCap *= 2;
+					minuteEdges = (Edge **)realloc(minuteEdges, sizeof(Edge *) * minuteEdgeCap);
+
+					minuteEdgeIndices = (uint16 *)realloc(minuteEdgeIndices, sizeof(uint16) * minuteEdgeCap);
+				}
+				minuteEdges[minuteEdgeCount] = edge;
+				minuteEdgeIndices[minuteEdgeCount] = i;
+				minuteEdgeCount++;
+
+				// Prevent rounding errors
+				for (uint16 ii = 0; ii < voronoiGraph.edges.size; ii++)
+				{
+					Edge * edge2 = voronoiGraph.edges.edges[ii];
+
+					if (Vector2Equals(edge->vertexA, edge2->vertexA))
+						edge2->vertexA = edge->vertexA;
+					if (Vector2Equals(edge->vertexA, edge2->vertexB))
+						edge2->vertexB = edge->vertexA;
+				}
+			}
+		}
+		
+		for (uint16 i = 0; i < minuteEdgeCount; i++)
+		{
+			VGRemoveEdgeAt(&voronoiGraph, minuteEdgeIndices[i] - i);
+		}
+
+		free(minuteEdges);
+		free(minuteEdgeIndices);
+		
 		// ----------------------------------------------------------
+		#pragma endregion
 
 		BeginDrawing();
 		ClearBackground(BLACK);
@@ -274,27 +383,27 @@ int main ()
 		#pragma region PixelSollution
 		// ------------- pixel sollution --------------
 		// Pixel by pixel draw voronoi
-		for (uint16 y = 0; y < BOARD_HEIGHT; y++)
-		{
-			for (uint16 x = 0; x < BOARD_WIDTH; x++)
-			{
-				uint16 closestSeed = 0;
-				float closestDist = (BOARD_WIDTH + BOARD_HEIGHT) * (BOARD_WIDTH + BOARD_HEIGHT);
-				for (uint16 i = 0; i < SEED_COUNT; i++)
-				{
-					float dist = Vector2DistanceSqr((Vector2){ (float)x, (float)y }, seeds[i]);
-					if (dist < closestDist)
-					{
-						closestDist = dist;
-						closestSeed = i;
-					}
-				}
-				float hue = (float)closestSeed / (float)SEED_COUNT;
-				Color col = ColorFromHSV(hue * 360.0f, 1.0f, 1.0f);
-				col.a = 100;
-				DrawPixel(x, y, col);
-			}
-		}
+		// for (uint16 y = 0; y < BOARD_HEIGHT; y++)
+		// {
+		// 	for (uint16 x = 0; x < BOARD_WIDTH; x++)
+		// 	{
+		// 		uint16 closestSeed = 0;
+		// 		float closestDist = (BOARD_WIDTH + BOARD_HEIGHT) * (BOARD_WIDTH + BOARD_HEIGHT);
+		// 		for (uint16 i = 0; i < SEED_COUNT; i++)
+		// 		{
+		// 			float dist = Vector2DistanceSqr((Vector2){ (float)x, (float)y }, seeds[i]);
+		// 			if (dist < closestDist)
+		// 			{
+		// 				closestDist = dist;
+		// 				closestSeed = i;
+		// 			}
+		// 		}
+		// 		float hue = (float)closestSeed / (float)SEED_COUNT;
+		// 		Color col = ColorFromHSV(hue * 360.0f, 1.0f, 1.0f);
+		// 		col.a = 100;
+		// 		DrawPixel(x, y, col);
+		// 	}
+		// }
 		// ---------------------------------------------
 		#pragma endregion
 
@@ -312,11 +421,23 @@ int main ()
 
 		#pragma region FortuneSollution
 		// ------------- Fortune's algorithm sollution --------------
-
+		for (uint16 i = 0; i < voronoiGraph.edges.size; i++)
+		{
+			Edge * vEdge = voronoiGraph.edges.edges[i];
+			DrawLineV(vEdge->leftPoint, vEdge->rightPoint, RED);
+			DrawLineV(vEdge->vertexA, (Vector2){100,100}, GREEN);
+			DrawLineV(vEdge->vertexB, (Vector2){100,100}, GREEN);
+		}
+		for (uint16 i = 0; i < voronoiGraph.vertices.size; i++)
+		{
+			Vector2 v = voronoiGraph.vertices.points[i];
+			DrawCircleV(v, 2.0, BLUE);
+		}
+		
 		// ----------------------------------------------------------
 		#pragma endregion
 
-		clock_t endTime = clock();
+		// clock_t endTime = clock();
 		
 		// Draw seeds
 		for (uint16 i = 0; i < SEED_COUNT; i++)
@@ -405,16 +526,16 @@ int main ()
 			}
 		}
 
-		fprintf(timeFile, "%u,%llu\n",
-			SEED_COUNT,
-			(endTime - startTime)
-		);
+		// fprintf(timeFile, "%u,%llu\n",
+		// 	SEED_COUNT,
+		// 	(endTime - startTime)
+		// );
 	}
 
 	// destroy the window and cleanup the OpenGL context
 	CloseWindow();
 
-	fclose(timeFile);
+	// fclose(timeFile);
 
 	return 0;
 }

@@ -1,108 +1,35 @@
 #include <stdio.h>
+#include <float.h>
 
 #include "raylib.h"
 
 #include "myMath.h"
 #include "definitions.h"
 
-#pragma region EventStructures
-typedef struct Event {
-    char type; // 'S' for seed, 'C' for circle
-    Vector2 point;
-
-    // For circle events
-    Node * nodeP, * nodeL, * nodeR;
-    char valid;
-} Event;
-
-#pragma endregion
-#pragma region BPQueueStructures
-
-typedef struct BinaryPriorityQueue {
-    Event *queue;
-    uint16 capacity;
-    uint16 size;
-} BinaryPriorityQueue;
-
-uint16 BPQInit(BinaryPriorityQueue *pq, uint16 capacity){
-    pq->capacity = capacity;
-    pq->size = 0;
-    pq->queue = (Event *)malloc(sizeof(Event) * capacity);
-    return pq->capacity;
-}
-
-uint16 BPQAdd(BinaryPriorityQueue *pq, Event e){
-    if (pq->size >= pq->capacity){
-        pq->capacity *= 2;
-        pq->queue = (Event *)realloc(pq->queue, sizeof(Event) * pq->capacity);
-    }
-    pq->queue[pq->size] = e;
-    pq->size++;
-    return pq->size - 1;
-}
-
-uint16 BPQPush(BinaryPriorityQueue *pq, Event e){
-    uint16 p = pq->size;
-    uint16 p2;
-    BPQAdd(pq, e);
-    while (1)
-    {
-        if (p == 0) break;
-        p2 = (p - 1) / 2;
-        if (Compare(p, p2) < 0){
-            Event temp = pq->queue[p];
-            pq->queue[p] = pq->queue[p2];
-            pq->queue[p2] = temp;
-            p = p2;
-        }
-        else break;
-    }
-    return p;
-}
-
-/// @brief Pop the smalles element from the priority queue
-/// @param pq 
-/// @return 
-Event BPQPop(BinaryPriorityQueue *pq){
-    Event result = pq->queue[0];
-    pq->size--;
-    pq->queue[0] = pq->queue[pq->size];
-    uint16 p = 0;
-    uint16 p1, p2, pn;
-    while (1)
-    {
-        pn = p;
-        p1 = 2 * p + 1;
-        p2 = 2 * p + 2;
-        if (p1 < pq->size && Compare(p, p1) > 0) p = p1; // left child is smaller
-        if (p2 < pq->size && Compare(p, p2) > 0) p = p2; // right child is even smaller
-
-        if (pn == p) break;
-
-        Event temp = pq->queue[p];
-        pq->queue[p] = pq->queue[pn];
-        pq->queue[pn] = temp;
-    }
-    return result;
-}
-#pragma endregion
 #pragma region EdgeStructures
+
 typedef struct Edge
 {
+    char done;
     Vector2 rightPoint, leftPoint;
     Vector2 vertexA, vertexB;
 } Edge;
 
 void EdgeAddVertex(Edge * e, Vector2 v)
 {
-    if (e->vertexA.x == 0 && e->vertexA.y == 0)
+    if (Vector2Equals(e->vertexA, VERTEX_UNKNOWN))
     {
         e->vertexA = v;
     }
-    else if (e->vertexB.x == 0 && e->vertexB.y == 0)
+    else if (Vector2Equals(e->vertexB, VERTEX_UNKNOWN))
     {
         e->vertexB = v;
     }
+}
+
+char EdgeIsPartlyInfinite(Edge * e)
+{
+    return Vector2Equals(e->vertexA, VERTEX_INFINITE) || Vector2Equals(e->vertexB, VERTEX_INFINITE);
 }
 
 typedef struct EdgeList
@@ -119,7 +46,7 @@ void EdgeListInit(EdgeList * el, uint16 capacity)
     el->edges = (Edge *)malloc(sizeof(Edge) * el->capacity);
 }
 
-Node * EdgeListAdd(EdgeList * el, Edge e)
+Edge * EdgeListAdd(EdgeList * el, Edge e)
 {
     if (el->size >= el->capacity)
     {
@@ -275,6 +202,142 @@ void PNodeListFree(PNodeList * nl)
     nl->capacity = 0;
 }
 #pragma endregion
+#pragma region EventStructures
+typedef struct Event {
+    char type; // 'S' for seed, 'C' for circle
+    Vector2 point;
+
+    // For circle events
+    Node * nodeP, * nodeL, * nodeR;
+    char valid;
+    Vector2 center;
+} Event;
+
+float CircleEventY(Event * e)
+{
+    return e->center.y + Vector2Distance(e->point, e->center);
+}
+
+float CircleEventX(Event * e)
+{
+    return e->center.x;
+}
+
+typedef struct EventList {
+    Event * events;
+    uint16 size;
+    uint16 capacity;
+} EventList;
+
+void EventListInit(EventList * el, uint16 capacity){
+    el->size = 0;
+    el->capacity = capacity;
+    el->events = (Event *)malloc(sizeof(Event) * el->capacity);
+}
+
+Event * EventListAdd(EventList * el, Event e){
+    if (el->size >= el->capacity){
+        el->capacity *= 2;
+        el->events = (Event *)realloc(el->events, sizeof(Event) * el->capacity);
+    }
+    el->events[el->size] = e;
+    el->size++;
+    return &el->events[el->size - 1];
+}
+
+void EventListClear(EventList * el){
+    el->size = 0;
+}
+
+void EventListFree(EventList * el){
+    free(el->events);
+    el->events = NULL;
+    el->size = 0;
+    el->capacity = 0;
+}
+
+#pragma endregion
+#pragma region BPQueueStructures
+
+typedef struct BinaryPriorityQueue {
+    Event **queue;
+    uint16 capacity;
+    uint16 size;
+} BinaryPriorityQueue;
+
+uint16 BPQInit(BinaryPriorityQueue *pq, uint16 capacity){
+    pq->capacity = capacity;
+    pq->size = 0;
+    pq->queue = (Event **)malloc(sizeof(Event *) * capacity);
+    return pq->capacity;
+}
+
+uint16 BPQAdd(BinaryPriorityQueue *pq, Event * e){
+    if (pq->size >= pq->capacity){
+        pq->capacity *= 2;
+        pq->queue = (Event **)realloc(pq->queue, sizeof(Event *) * pq->capacity);
+    }
+    pq->queue[pq->size] = e;
+    pq->size++;
+    return pq->size - 1;
+}
+
+uint16 BPQPush(BinaryPriorityQueue *pq, Event * e){
+    uint16 p = pq->size;
+    uint16 p2;
+    BPQAdd(pq, e);
+    while (1)
+    {
+        if (p == 0) break;
+        p2 = (p - 1) / 2;
+        if (Compare(p, p2) < 0){
+            Event * temp = pq->queue[p];
+            pq->queue[p] = pq->queue[p2];
+            pq->queue[p2] = temp;
+            p = p2;
+        }
+        else break;
+    }
+    return p;
+}
+
+/// @brief Pop the smalles element from the priority queue
+/// @param pq 
+/// @return 
+Event * BPQPop(BinaryPriorityQueue *pq){
+    Event * result = pq->queue[0];
+    pq->size--;
+    pq->queue[0] = pq->queue[pq->size];
+    uint16 p = 0;
+    uint16 p1, p2, pn;
+    while (1)
+    {
+        pn = p;
+        p1 = 2 * p + 1;
+        p2 = 2 * p + 2;
+        if (p1 < pq->size && Compare(p, p1) > 0) p = p1; // left child is smaller
+        if (p2 < pq->size && Compare(p, p2) > 0) p = p2; // right child is even smaller
+
+        if (pn == p) break;
+
+        Event * temp = pq->queue[p];
+        pq->queue[p] = pq->queue[pn];
+        pq->queue[pn] = temp;
+    }
+    return result;
+}
+
+void BPQClear(BinaryPriorityQueue *pq){
+    pq->size = 0;
+}
+
+void BPQFree(BinaryPriorityQueue *pq){
+    free(pq->queue);
+    pq->queue = NULL;
+    pq->size = 0;
+    pq->capacity = 0;
+}
+#pragma endregion
 #pragma region VoronoiGraphStructures
 
 typedef struct Vector2List
@@ -322,6 +385,12 @@ void VGInit(VoronoiGraph * vg, uint16 capacity)
     Vector2ListInit(&vg->vertices, capacity);
 }
 
+void VGClear(VoronoiGraph * vg)
+{
+    PEdgeListClear(&vg->edges);
+    Vector2ListFree(&vg->vertices);
+}
+
 void VGFree(VoronoiGraph * vg)
 {
     PEdgeListFree(&vg->edges);
@@ -333,6 +402,16 @@ void VGAddEdge(VoronoiGraph * vg, Edge * e)
     PEdgeListAdd(&vg->edges, e);
 }
 
+void VGRemoveEdgeAt(VoronoiGraph * vg, uint16 index)
+{
+    if (index >= vg->edges.size) return;
+    for (uint16 i = index; i < vg->edges.size - 1; i++)
+    {
+        vg->edges.edges[i] = vg->edges.edges[i + 1];
+    }
+    vg->edges.size--;
+}
+
 void VGAddVertex(VoronoiGraph * vg, Vector2 v)
 {
     Vector2ListAdd(&vg->vertices, v);
@@ -340,6 +419,59 @@ void VGAddVertex(VoronoiGraph * vg, Vector2 v)
 
 #pragma endregion
 #pragma region CircleStructures
+typedef struct CircleList {
+    Node ** nodes;
+    Event ** events;
+    uint16 size;
+    uint16 capacity;
+} CircleList;
+
+void CircleListInit(CircleList * cl, uint16 capacity){
+    cl->size = 0;
+    cl->capacity = capacity;
+    cl->events = (Event **)malloc(sizeof(Event *) * cl->capacity);
+    cl->nodes = (Node **)malloc(sizeof(Node *) * cl->capacity);
+}
+
+void CircleListAdd(CircleList * cl, Node * n, Event * e){
+    if (cl->size >= cl->capacity){
+        cl->capacity *= 2;
+        cl->events = (Event **)realloc(cl->events, sizeof(Event *) * cl->capacity);
+        cl->nodes = (Node **)realloc(cl->nodes, sizeof(Node *) * cl->capacity);
+    }
+    cl->nodes[cl->size] = n;
+    cl->events[cl->size] = e;
+    cl->size++;
+}
+
+void CircleListClear(CircleList * cl){
+    cl->size = 0;
+}
+
+void CircleListFree(CircleList * cl){
+    free(cl->events);
+    free(cl->nodes);
+    cl->events = NULL;
+    cl->nodes = NULL;
+    cl->size = 0;
+    cl->capacity = 0;
+}
+
+sint16 CircleListContainsNode(CircleList * cl, Node * e){
+    for (uint16 i = 0; i < cl->size; i++){
+        if (cl->nodes[i] == e) return i;
+    }
+    return -1;
+}
+
+void CircleListRemoveAt(CircleList * cl, uint16 index){
+    if (index >= cl->size) return;
+    for (uint16 i = index; i < cl->size - 1; i++){
+        cl->events[i] = cl->events[i + 1];
+        cl->nodes[i] = cl->nodes[i + 1];
+    }
+    cl->size--;
+}
 
 #pragma endregion
 #pragma region MinorMethods
@@ -363,7 +495,7 @@ void ReplaceChildNode(Node * parent, Node * oldChild, Node * newChild)
 
 float EdgeNodeCut(Node * node, float ys, float x)
 {
-    if (node->edge != NULL && !node->flipped)
+    if (!node->flipped)
         return x - ParabolicCut(
             node->edge->leftPoint.x, node->edge->leftPoint.y,
             node->edge->rightPoint.x, node->edge->rightPoint.y,
@@ -409,6 +541,161 @@ Node * EdgeToRightNode(Node * edgeNode)
     c->type = 'E';
     return c;
 }
+
+Node * LeftSeedNode(Node * edgeNode)
+{
+    Node * c = edgeNode;
+    while (1)
+    {
+        if (c->parent == NULL) return NULL;
+        if (c->parent->left == c)
+        {
+            c = c->parent;
+            continue;
+        }
+        else
+        {
+            c = c->parent->left;
+            break;
+        }
+    }
+    while (c->right != NULL)
+    {
+        c = c->right;
+    }
+    return c;
+}
+
+Node * RightSeedNode(Node * edgeNode)
+{
+    Node * c = edgeNode;
+    while (1)
+    {
+        if (c->parent == NULL) return NULL;
+        if (c->parent->right == c)
+        {
+            c = c->parent;
+            continue;
+        }
+        else
+        {
+            c = c->parent->right;
+            break;
+        }
+    }
+    while (c->left != NULL)
+    {
+        c = c->left;
+    }
+    return c;
+}
+
+Vector2 CircumCircleCenter(Vector2 v0, Vector2 v1, Vector2 v2)
+{
+    if (Vector2Equals(v0, v1) || Vector2Equals(v1, v2) || Vector2Equals(v2, v0))
+    {
+        puts("Error: Identical points in CircumCircleCenter");
+        exit(1);
+    }
+
+    float ax = (v0.x + v2.x) * 0.5f;
+    float ay = (v0.y + v2.y) * 0.5f;
+
+    float cx = (v1.x + v2.x) * 0.5f;
+    float cy = (v1.y + v2.y) * 0.5f;
+
+    float bx, by, dx, dy;
+
+    if (v0.x == v2.x)
+    {
+        bx = 0;
+        by = 1;
+    }
+    else
+    {
+        bx = (v2.y - v0.y) / (v0.x - v2.x);
+        by = 1;
+    }
+
+    if (v1.x == v2.x)
+    {
+        dx = -1;
+        dy = 0;
+    }
+    else
+    {
+        dx = (v1.y - v2.y) / (v1.x - v2.x);
+        dy = -1;
+    }
+
+    float a = (dy * (cx - ax) - dx * (cy - ay)) / (bx * dy - dx * by);
+
+    return (Vector2){
+        .x = ax + a * bx,
+        .y = ay + a * by
+    };
+}
+
+Event * CircleCheckSeedNode(EventList * eventAlloc, Node * seedNode, float ys)
+{
+    Node * l = LeftSeedNode(seedNode);
+    Node * r = RightSeedNode(seedNode);
+
+    if (
+        l == NULL ||
+        r == NULL ||
+        Vector2Equals(l->point, r->point) ||
+        Vector2Equals(r->point, seedNode->point) ||
+        Vector2Equals(seedNode->point, l->point)
+    ) return NULL;
+
+    if (CCW(
+        l->point,
+        seedNode->point,
+        r->point,
+        0
+    ) <= 0) return NULL;
+
+    Vector2 circumcenter = CircumCircleCenter(
+        l->point,
+        seedNode->point,
+        r->point
+    );
+
+    Event * circleEvent = EventListAdd(eventAlloc, (Event){
+        .type = 'C',
+        .center = circumcenter,
+        .nodeP = seedNode,
+        .nodeL = l,
+        .nodeR = r,
+        .valid = 1
+    });
+    if (CircleEventY(circleEvent) > ys || fabsf(CircleEventY(circleEvent) - ys) < FEM)
+        return circleEvent;
+    return NULL;
+}
+
+void CleanUpTree(Node * root)
+{
+    if (root->type == 'S') return;
+
+    while (Vector2Equals(root->edge->vertexB, VERTEX_UNKNOWN))
+    {
+        EdgeAddVertex(
+            root->edge,
+            VERTEX_INFINITE
+        );
+    }
+    if (root->flipped)
+    {
+        Vector2 temp = root->edge->leftPoint;
+        root->edge->leftPoint = root->edge->rightPoint;
+        root->edge->rightPoint = temp;
+    }
+    root->edge->done = 1;
+    CleanUpTree(root->left);
+    CleanUpTree(root->right);
+}
 #pragma endregion
 
 
@@ -438,7 +725,8 @@ Node * ProcessSeedEvent(
             .left = NULL,
             .right = NULL,
             .parent = NULL,
-            .edge = NULL
+            .edge = NULL,
+            .flipped = 0
         });
 
         // Circle check list
@@ -458,12 +746,20 @@ Node * ProcessSeedEvent(
     Edge * newEdge = EdgeListAdd(edgeAlloc, (Edge){
         .leftPoint = c->point,
         .rightPoint = seed,
-        .vertexA = (Vector2){0, 0},
-        .vertexB = (Vector2){0, 0}
+        .vertexA = VERTEX_UNKNOWN,
+        .vertexB = VERTEX_UNKNOWN
     });
     VGAddEdge(voronoiGraph, newEdge);
 
-    Node * subRoot = NodeListAdd(nodeAlloc, (Node){});
+    Node * subRoot = NodeListAdd(nodeAlloc, (Node){
+        .type = 0,
+        .point = {0,0},
+        .edge = NULL,
+        .left = NULL,
+        .right = NULL,
+        .parent = NULL,
+        .flipped = 0
+    });
     if (fabsf(newEdge->leftPoint.y - newEdge->rightPoint.y) < FEM)
     {
         if (newEdge->leftPoint.x < newEdge->rightPoint.x)
@@ -476,7 +772,8 @@ Node * ProcessSeedEvent(
                 .left = NULL,
                 .right = NULL,
                 .parent = NULL,
-                .edge = NULL
+                .edge = NULL,
+                .flipped = 0
             });
             subRoot->right = NodeListAdd(nodeAlloc, (Node){
                 .type = 'S',
@@ -484,7 +781,8 @@ Node * ProcessSeedEvent(
                 .left = NULL,
                 .right = NULL,
                 .parent = NULL,
-                .edge = NULL
+                .edge = NULL,
+                .flipped = 0
             });
         }
         else
@@ -498,7 +796,8 @@ Node * ProcessSeedEvent(
                 .left = NULL,
                 .right = NULL,
                 .parent = NULL,
-                .edge = NULL
+                .edge = NULL,
+                .flipped = 0
             });
             subRoot->right = NodeListAdd(nodeAlloc, (Node){
                 .type = 'S',
@@ -506,7 +805,8 @@ Node * ProcessSeedEvent(
                 .left = NULL,
                 .right = NULL,
                 .parent = NULL,
-                .edge = NULL
+                .edge = NULL,
+                .flipped = 0
             });
         }
         // Circle check list
@@ -527,7 +827,8 @@ Node * ProcessSeedEvent(
             .left = NULL,
             .right = NULL,
             .parent = NULL,
-            .edge = NULL
+            .edge = NULL,
+            .flipped = 0
         });
         subRoot->right = NodeListAdd(nodeAlloc, (Node){
             .type = 'E',
@@ -549,7 +850,8 @@ Node * ProcessSeedEvent(
                 .parent = NULL,
                 .edge = NULL
             }),
-            .parent = NULL
+            .parent = NULL,
+            .point = {0,0}
         });
         // Circle check list
         PNodeListClear(circleCheckList);
@@ -604,7 +906,7 @@ Node * ProcessCircleEvent(
     PNodeListAdd(circleCheckList, sc);
 
     // Create new vertex
-    Vector2 vertex = circleEvent.point;
+    Vector2 vertex = circleEvent.center;
 
     VGAddVertex(voronoiGraph, vertex);
 
@@ -638,9 +940,12 @@ Node * ProcessCircleEvent(
         .flipped = 0,
         .left = eb->left,
         .right = eb->right,
-        .parent = NULL
+        .parent = NULL,
+        .point = {0,0}
     });
     if (eb->parent == NULL) return newEdgeNode;
     ReplaceChildNode(eb->parent, eb, newEdgeNode);
     return rootNode;
 }
+#pragma endregion
+#pragma region ComputeVoronoiDiagram
