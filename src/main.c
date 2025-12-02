@@ -18,6 +18,8 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 
 #include "definitions.h"
 #include "polygon.h"
+#include "fortune.h"
+#include "priorityQueue.h"
 #include "myMath.h"
 
 int main ()
@@ -59,6 +61,7 @@ int main ()
 
 	char manualSeedControl = 0;
 
+	#pragma region PolygonSollution
 	// ------------- polygon sollution --------------
 	// Polygon polygons[MAX_SEED_COUNT];
 
@@ -72,6 +75,21 @@ int main ()
 	// Polygon workagon1;
 	// PolygonInit(&workagon1);
 	// ---------------------------------------------
+	#pragma endregion
+
+	#pragma region FortuneSollution
+	// ------------- Fortune's algorithm sollution --------------
+	EdgeList edgeAlloc;
+	EdgeListInit(&edgeAlloc, 32);
+	NodeList nodeAlloc;
+	NodeListInit(&nodeAlloc, 32);
+	BinaryPriorityQueue PQ;
+	BPQInit(&PQ, 32);
+	// Hashtable CurrentArcs;
+	VoronoiGraph voronoiGraph;
+	VGInit(&voronoiGraph, 32);
+	// ----------------------------------------------------------
+	#pragma endregion
 
 	const uint16 SAMPLES_PER_COUNT = 20;
 	uint16 sampleCounter = 0;
@@ -84,6 +102,7 @@ int main ()
 
 		clock_t startTime = clock();
 
+		#pragma region PolygonSollution
 		// ------------- polygon sollution --------------
 		// for (uint16 s0 = 0; s0 < SEED_COUNT; s0++)
 		// {
@@ -184,10 +203,60 @@ int main ()
 		// 	}
 		// }
 		// ---------------------------------------------
+		#pragma endregion
+
+		// ------------- Fortune's algorithm sollution --------------
+		Node * rootNode = NULL;
+		
+		for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
+		{
+			BPQPush(&PQ, (Event){
+				.type = 'S',
+				.point = seeds[i],
+				.nodeP = NULL,
+				.nodeL = NULL,
+				.nodeR = NULL,
+				.valid = 1
+			});
+		}
+		while (PQ.size > 0)
+		{
+			Event nextEvent = BPQPop(&PQ);
+
+			if (nextEvent.type == 'S')
+			{
+				// Handle seed event
+				ProcessSeedEvent(
+					&edgeAlloc,
+					&nodeAlloc,
+					&voronoiGraph,
+					nextEvent.point,
+					rootNode,
+					nextEvent.point.y
+				);
+			}
+			else
+			{
+				// Handle circle event
+				// Current circles
+				if(!nextEvent.valid) continue;
+				rootNode = ProcessCircleEvent(
+					&edgeAlloc,
+					&nodeAlloc,
+					&voronoiGraph,
+					nextEvent,
+					rootNode,
+					nextEvent.point.y // possibly wrong
+				);
+			}
+			
+		}
+		// ----------------------------------------------------------
 
 		BeginDrawing();
 		ClearBackground(BLACK);
 
+		#pragma region PixelSollution
 		// ------------- pixel sollution --------------
 		// Pixel by pixel draw voronoi
 		for (uint16 y = 0; y < BOARD_HEIGHT; y++)
@@ -212,8 +281,9 @@ int main ()
 			}
 		}
 		// ---------------------------------------------
-	
-		
+		#pragma endregion
+
+		#pragma region PolygonSollution
 		// ------------- polygon sollution --------------
 		// for (uint16 i = 0; i < SEED_COUNT; i++)
 		// {
@@ -222,7 +292,14 @@ int main ()
 		// 	PolygonDraw(&polygons[i], col);
 		// 	// PolygonDrawLines(&polygons[i], col);
 		// }
-		// ---------------------------------------------
+		// ----------------------------------------------
+		#pragma endregion
+
+		#pragma region FortuneSollution
+		// ------------- Fortune's algorithm sollution --------------
+
+		// ----------------------------------------------------------
+		#pragma endregion
 
 		clock_t endTime = clock();
 		
