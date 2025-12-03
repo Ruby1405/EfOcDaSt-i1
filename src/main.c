@@ -16,11 +16,12 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 
 #include "resource_dir.h"	// utility header for SearchAndSetResourceDir
 
-// #include "definitions.h"
+#include "definitions.h"
 #include "polygon.h"
-#include "fortune.h"
+// #include "fortune.h"
+#include "myFortune.h"
 #include "priorityQueue.h"
-// #include "myMath.h"
+#include "myMath.h"
 
 int main ()
 {
@@ -43,8 +44,8 @@ int main ()
 	// ToggleFullscreen();
 
 	// ----------- my stuff ------------
-	const uint16 MAX_SEED_COUNT = 3;
-	uint16 SEED_COUNT = 3;
+	const uint16 MAX_SEED_COUNT = 6;
+	uint16 SEED_COUNT = 6;
 	const float SEED_SPEED = 20.0f;
 	Vector2 seeds[MAX_SEED_COUNT];
 	for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
@@ -79,6 +80,17 @@ int main ()
 
 	#pragma region FortuneSollution
 	// ------------- Fortune's algorithm sollution --------------
+	uint16List activeSeedBuffer;
+	uint16ListInit(&activeSeedBuffer, 16);
+	VorVertexList vorVerts;
+	VorVertexListInit(&vorVerts, 16);
+	Polygon voronoiPolygons[MAX_SEED_COUNT];
+
+	for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
+	{
+		PolygonInit(&voronoiPolygons[i]);
+	}
+
 	// EdgeList edgeAlloc;
 	// EdgeListInit(&edgeAlloc, 256);
 	// NodeList nodeAlloc;
@@ -213,6 +225,247 @@ int main ()
 
 		#pragma region FortuneSollution
 		// ------------- Fortune's algorithm sollution --------------
+		// Reset data structures
+		uint16ListClear(&activeSeedBuffer);
+		VorVertexListClear(&vorVerts);
+
+		// Sort seeds by x value descending
+		for (uint16 i = 0; i < SEED_COUNT; i++)
+		{
+			for (uint16 ii = i; ii < SEED_COUNT - 1; ii++)
+			{
+				if (seeds[ii].x < seeds[ii + 1].x)
+				{
+					Vector2 temp = seeds[ii];
+					seeds[ii] = seeds[ii + 1];
+					seeds[ii + 1] = temp;
+
+					Vector2 tempV = seedVels[ii];
+					seedVels[ii] = seedVels[ii + 1];
+					seedVels[ii + 1] = tempV;
+				}
+			}
+		}
+
+		float sweepLine = 0.0f;
+		Circumcircle * currentCirclesHead = NULL;
+		for (uint16 seedI = 0; seedI < SEED_COUNT; seedI++)
+		{
+			Vector2 seed = seeds[seedI];
+			sweepLine = seed.y;
+
+			// If the sweep line has left a circle, close the circle (process circle event)
+			while (
+				currentCirclesHead != NULL &&
+				CCEventTime(currentCirclesHead) < sweepLine
+			)
+			{
+				// Add circle to voronoi graph
+				VorVertexListAdd(&vorVerts, CCToVorVertex(*currentCirclesHead));
+
+				// Remove circle from active list
+				Circumcircle * toDelete = currentCirclesHead;
+				currentCirclesHead = currentCirclesHead->next;
+				free(toDelete);
+			}
+
+			// Process seed event
+			// Check if seed lies within any existing circumcircles
+			{
+				Circumcircle * c = currentCirclesHead;
+				while (c != NULL)
+				{
+					if (CCcontainsPoint(c, seed))
+					{
+						// Handle case where seed is inside circumcircle
+						// Find the closest point of the circumcircle
+						float minDist = FLT_MAX;
+						char minIndex = 0;
+						for (char p = 0; p < 3; p++)
+						{
+							float dist = Vector2Distance(
+								seed,
+								seeds[c->pointIndices[p]]
+							);
+							if (dist < minDist)
+							{
+								minDist = dist;
+								minIndex = p;
+							}
+						}
+						// Split the circle between the the seed and the closest point
+						// Circle one
+						c->pointIndices[(minIndex + 1) % 3] = seedI;
+						c->center = CCCenter(
+							seeds[c->pointIndices[0]],
+							seeds[c->pointIndices[1]],
+							seeds[c->pointIndices[2]]
+						);
+						c->radius = Vector2Distance(
+							c->center,
+							seeds[seedI]
+						);
+						// Remove circle from list
+						if (currentCirclesHead == c)
+							currentCirclesHead = c->next;
+						else
+							c->prev->next = c->next;
+						if (c->next != NULL)
+							c->next->prev = c->prev;
+						CCAddToList(&currentCirclesHead, c);
+						
+						// Circle two
+						Vector2 center = CCCenter(
+							seeds[c->pointIndices[(minIndex + 2) % 3]],
+							seeds[c->pointIndices[minIndex]],
+							seeds[seedI]
+						);
+						Circumcircle * c2 = CCCreate(
+							c->pointIndices[(minIndex + 2) % 3],
+							c->pointIndices[minIndex],
+							seedI,
+							center,
+							Vector2Distance(
+								center,
+								seeds[seedI]
+							)
+						);
+						CCAddToList(&currentCirclesHead, c2);
+					}
+					c = c->next;
+				}
+			}
+
+			// If there are at least two active seeds, create new circumcircles
+			if (activeSeedBuffer.size >= 2)
+			{
+				// Create all possible circles with the new seed and any two active seeds
+				uint16 p0 = seedI;
+				for (uint16 i = 0; i < activeSeedBuffer.size - 1; i++)
+				{
+					uint16 p1 = activeSeedBuffer.values[i];
+					if (p1 == p0) continue;
+					for (uint16 ii = i + 1; ii < activeSeedBuffer.size; ii++)
+					{
+						uint16 p2 = activeSeedBuffer.values[ii];
+						if (p2 == p0) continue;
+
+						Vector2 center = CCCenter(
+							seeds[p0],
+							seeds[p1],
+							seeds[p2]
+						);
+						float radius = Vector2Distance(
+							center,
+							seeds[p0]
+						);
+
+						// Check if any other seed is inside the circumcircle
+						char validCircle = 1;
+						for (uint16 p3 = 0; p3 < SEED_COUNT; p3++)
+						{
+							if (p3 == p0 || p3 == p1 || p3 == p2) continue;
+							float dist = Vector2Distance(
+								center,
+								seeds[p3]
+							);
+							if (dist < radius)
+							{
+								validCircle = 0;
+								break;
+							}
+						}
+						if (!validCircle) continue;
+
+						// Check if the circle already exists
+						char circleExists = 0;
+						Circumcircle * c = currentCirclesHead;
+						while (c != NULL)
+						{
+							if (
+								(c->pointIndices[0] == p0 ||
+								c->pointIndices[1] == p0 ||
+								c->pointIndices[2] == p0) &&
+								(c->pointIndices[0] == p1 ||
+								c->pointIndices[1] == p1 ||
+								c->pointIndices[2] == p1) &&
+								(c->pointIndices[0] == p2 ||
+								c->pointIndices[1] == p2 ||
+								c->pointIndices[2] == p2)
+							)
+							{
+								circleExists = 1;
+								break;
+							}
+							c = c->next;
+						}
+						if (circleExists) continue;
+
+						// Create the circumcircle and add it to the list
+						Circumcircle * newCircle = CCCreate(
+							p0,
+							p1,
+							p2,
+							center,
+							radius
+						);
+						CCAddToList(&currentCirclesHead, newCircle);
+					}
+				}
+			}
+			uint16ListAdd(&activeSeedBuffer, seedI);
+		}
+		// Close any remaining circumcircles
+		while (
+			currentCirclesHead != NULL
+		)
+		{
+			// Add circle to voronoi graph
+			VorVertexListAdd(&vorVerts, CCToVorVertex(*currentCirclesHead));
+
+			// Remove circle from active list
+			Circumcircle * toDelete = currentCirclesHead;
+			currentCirclesHead = currentCirclesHead->next;
+			free(toDelete);
+		}
+
+		// Construct voronoi polygons from voronoi vertices
+		for (uint16 i = 0; i < SEED_COUNT; i++)
+		{
+			PolygonClear(&voronoiPolygons[i]);
+
+			for (uint16 v = 0; v < vorVerts.size; v++)
+			{
+				uint16 insertionIndex = 0;
+				for (uint16 polyV = 0; polyV < voronoiPolygons[i].pointsCount; polyV++)
+				{
+					float angleA = atan2f(
+						voronoiPolygons[i].points[polyV].y - seeds[i].y,
+						voronoiPolygons[i].points[polyV].x - seeds[i].x
+					);
+					float angleB = atan2f(
+						vorVerts.verts[v].position.y - seeds[i].y,
+						vorVerts.verts[v].position.x - seeds[i].x
+					);
+					if (angleA < angleB)
+					{
+						insertionIndex = polyV + 1;
+					}
+				}
+				PolygonAddPointAt(
+					&voronoiPolygons[i],
+					vorVerts.verts[v].position,
+					insertionIndex
+				);
+			}
+			PolygonAddPoint(
+				&voronoiPolygons[i],
+				seeds[i]
+			);
+		}
+		
+		
+		
 		// Node * rootNode = NULL;
 		// EdgeListClear(&edgeAlloc);
 		// NodeListClear(&nodeAlloc);
@@ -421,6 +674,36 @@ int main ()
 
 		#pragma region FortuneSollution
 		// ------------- Fortune's algorithm sollution --------------
+
+		// for (uint16 i = 0; i < SEED_COUNT; i++)
+		// {
+		// 	Color col = ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f);
+		// 	col.a = 100;
+		// 	PolygonDraw(&voronoiPolygons[i], col);
+		// 	PolygonDrawLines(&voronoiPolygons[i], col);
+		// }
+		
+		for (uint16 i = 0; i < vorVerts.size; i++)
+		{
+			DrawCircleV(vorVerts.verts[i].position, 2.0, BLUE);
+			DrawLineV(
+				seeds[vorVerts.verts[i].s0],
+				vorVerts.verts[i].position,
+				GREEN
+			);
+			DrawLineV(
+				seeds[vorVerts.verts[i].s1],
+				vorVerts.verts[i].position,
+				GREEN
+			);
+			DrawLineV(
+				seeds[vorVerts.verts[i].s2],
+				vorVerts.verts[i].position,
+				GREEN
+			);
+		}
+		
+
 		// for (uint16 i = 0; i < voronoiGraph.edges.size; i++)
 		// {
 		// 	Edge * vEdge = voronoiGraph.edges.edges[i];
@@ -443,12 +726,12 @@ int main ()
 		for (uint16 i = 0; i < SEED_COUNT; i++)
 		{
 			// Dots
-			DrawCircleV(seeds[i], 2.0, WHITE);
+			// DrawCircleV(seeds[i], 2.0, WHITE);
 
 			// Coloured numbers
-			// DrawCircleV(seeds[i], 7.0, BLACK);
-			// Color col = ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f);
-			// DrawText(TextFormat("%d", i + 1), (sint32)seeds[i].x - 3, (sint32)seeds[i].y - 5, 10, col);
+			DrawCircleV(seeds[i], 7.0, BLACK);
+			Color col = ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f);
+			DrawText(TextFormat("%d", i + 1), (sint32)seeds[i].x - 3, (sint32)seeds[i].y - 5, 10, col);
 		}
 		
 		DrawFPS(10, 10);
