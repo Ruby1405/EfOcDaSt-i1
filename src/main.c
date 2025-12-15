@@ -717,8 +717,23 @@ int main ()
 				ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f)
 			);
 		}
-		DrawBeachLine(seeds, SEED_COUNT, beachLineRoot, directrix, BOARD_WIDTH, BOARD_HEIGHT);
-		
+		DrawBeachLine(SEED_COUNT, beachLineRoot, directrix, BOARD_WIDTH, BOARD_HEIGHT);
+		BeachLineItem * intersectedArc = BLFindArcAbovePoint(
+			beachLineRoot,
+			GetMousePosition().x,
+			directrix
+		);
+		if (intersectedArc != NULL && intersectedArc->type == ARC)
+		{
+			DrawParabola(
+				intersectedArc->data.arc.focus,
+				directrix,
+				BOARD_WIDTH,
+				BOARD_HEIGHT,
+				GRAY
+			);
+		}
+
 		DrawLine(0, directrix, BOARD_WIDTH, directrix, WHITE);
 
 		// for (uint16 i = 0; i < vorVerts.size; i++)
@@ -782,6 +797,7 @@ int main ()
 			BeachLineItem * newItem = (BeachLineItem *)malloc(sizeof(BeachLineItem));
 			newItem->type = ARC;
 			newItem->data.arc.seed = bLSeedIndex;
+			newItem->data.arc.focus = seeds[bLSeedIndex];
 			newItem->parent = NULL;
 			newItem->left = NULL;
 			newItem->right = NULL;
@@ -808,6 +824,10 @@ int main ()
 			// clear
 			BLDelete(&beachLineRoot);
 			bLSeedIndex = 0;
+		}
+		if (IsKeyPressed(KEY_W))
+		{
+			printf("BL item type: %s\n", intersectedArc->type == ARC ? "ARC" : intersectedArc->type == EDGE ? "EDGE" : "UNKNOWN");
 		}
 
 		if (IsKeyPressed(KEY_SPACE))

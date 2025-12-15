@@ -249,7 +249,7 @@ void DrawParabola(Vector2 focus, float directrixY, uint16 boardWidth, uint16 boa
         DrawLineV(curvePts[i - 1], curvePts[i], col);
     }
 }
-#pragma region VoronoiStructures
+#pragma region GeoBLStructures
 typedef struct Edge
 {
     Vector2 start;
@@ -269,7 +269,91 @@ typedef struct Arc
 } Arc;
 #pragma endregion
 
-#pragma region BeachLineStructures
+#pragma region GeoBLFunctions
+char GetEdgeArcIntersect(Edge edge, Arc arc, float directrixY, Vector2 * intersect)
+{
+    // Case 1: vertical edge
+    if (edge.direction.x == 0)
+    {
+        // Vertical arc
+        if (directrixY == arc.focus.y)
+        {
+            if (edge.start.x == arc.focus.x)
+            {
+                *intersect = arc.focus;
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+        float arcY = GetArcHeightAtX(arc.focus, edge.start.x, directrixY);
+        *intersect = (Vector2){ edge.start.x, arcY};
+        return 1;
+    }
+
+    // y = mx + b
+    float m = edge.direction.y / edge.direction.x;
+    float b = edge.start.y - m * edge.start.x;
+
+    // Case 2: vertical arc
+    if (arc.focus.x == (directrixY))
+    {
+        // Is arc in direction of edge
+        float intersectXOffset = arc.focus.x - edge.start.x;
+        if (intersectXOffset * edge.direction.x < 0)
+        {
+            return 0;
+        }
+
+        intersect->x = arc.focus.x;
+        intersect->y = m * intersect->x + b;
+        return 1;
+    }
+
+    // General case
+    // y = a0 + a1*x + a2 * x^2
+    float a2 = 1.0f / (2.0f * (arc.focus.y - directrixY));
+    float a1 = -m - 2.0f * a2 * arc.focus.x;
+    float a0 = a2 * arc.focus.x * arc.focus.x + (arc.focus.y + directrixY) * 0.5f - b;
+
+    float discriminant = a1 * a1 - 4.0f * a2 * a0;
+    if (discriminant < 0)
+    {
+        return 0;
+    }
+
+    float rootDisc = sqrtf(discriminant);
+    float x1 = (-a1 + rootDisc) / (2.0f * a2);
+    float x2 = (-a1 - rootDisc) / (2.0f * a2);
+
+    float x1Offset = x1 - edge.start.x;
+    float x2Offset = x2 - edge.start.x;
+    float x1Dot = x1Offset * edge.direction.x;
+    float x2Dot = x2Offset * edge.direction.x;
+
+    float x;
+    if (x1Dot >= 0.0f && x2Dot < 0.0f) x = x1;
+    else if (x1Dot < 0.0f && x2Dot >= 0.0f) x = x2;
+    else if (x1Dot >= 0.0f && x2Dot >= 0.0f)
+    {
+        if (x1Dot < x2Dot) x = x1;
+        else x = x2;
+    }
+    else // both dots are negative
+    {
+        if (x1Dot < x2Dot) x = x2;
+        else x = x1;
+    }
+
+    float y = GetArcHeightAtX(arc.focus, x, directrixY);
+    *intersect = (Vector2){ x, y };
+    return 1;
+}
+#pragma endregion
+
+#pragma region BinTreeBLStructures
 typedef enum BeachLineItemType
 {
     ARC,
@@ -288,9 +372,9 @@ typedef struct BeachLineItem
         Edge edge;
     } data;
 } BeachLineItem;
-
 #pragma endregion
-#pragma region BeachLineFunctions
+
+#pragma region BinTreeFunctions
 void BLDelete(BeachLineItem ** root)
 {
     if (*root == NULL) return;
@@ -304,16 +388,82 @@ void BLDelete(BeachLineItem ** root)
     BLDelete(&left);
     BLDelete(&right);
 }
-BeachLineItem * BLFindArcAbovePoint(BeachLineItem * root, Vector2 point)
+BeachLineItem * BLGetFirstLeftParent(BeachLineItem * item)
+{
+    BeachLineItem * current = item;
+    while (current->parent != NULL && current->parent->left == current)
+    {
+        current = current->parent;
+    }
+    return current->parent;
+}
+BeachLineItem * BLGetFirstRightParent(BeachLineItem * item)
+{
+    BeachLineItem * current = item;
+    while (current->parent != NULL && current->parent->right == current)
+    {
+        current = current->parent;
+    }
+    return current->parent;
+}
+BeachLineItem * BLGetFirstLeftLeaf(BeachLineItem * item)
+{
+    if (item == NULL) return NULL;
+
+    BeachLineItem * current = current->left;
+    while (current->right != NULL)
+    {
+        current = current->right;
+    }
+    return current;
+}
+BeachLineItem * BLGetFirstRightLeaf(BeachLineItem * item)
+{
+    if (item == NULL) return NULL;
+
+    BeachLineItem * current = current->right;
+    while (current->left != NULL)
+    {
+        current = current->left;
+    }
+    return current;
+}
+BeachLineItem * BLFindArcAbovePoint(BeachLineItem * root, float point, float directrixY)
 {
     if (root == NULL) return NULL;
     BeachLineItem * current = root;
     
     while (current->type != ARC)
     {
-        // First leaf on left
-        // BeachLineItem * left = 
+        BeachLineItem * left = BLGetFirstLeftLeaf(current->right);
+        BeachLineItem * right = BLGetFirstRightLeaf(current->left);
+
+        BeachLineItem * fromLeft = BLGetFirstRightParent(left);
+        BeachLineItem * fromRight = BLGetFirstLeftParent(right);
+
+        Edge separatingEdge = fromLeft->data.edge;
+
+        Vector2 leftIntersect, rightIntersect;
+        char leftHit = GetEdgeArcIntersect(
+            separatingEdge,
+            left->data.arc,
+            directrixY,
+            &leftIntersect
+        );
+        char rightHit = GetEdgeArcIntersect(
+            separatingEdge,
+            right->data.arc,
+            directrixY,
+            &rightIntersect
+        );
+
+        float intersectX = leftIntersect.x;
+        if (!leftHit && rightHit) intersectX = rightIntersect.x;
+        if (point < intersectX) current = current->left;
+        else current = current->right;
     }
+
+    return current;
 }
 void BLInsertArc(BeachLineItem ** root, uint16 seedIndex)
 {
