@@ -718,21 +718,21 @@ int main ()
 			);
 		}
 		DrawBeachLine(SEED_COUNT, beachLineRoot, directrix, BOARD_WIDTH, BOARD_HEIGHT);
-		BeachLineItem * intersectedArc = BLFindArcAbovePoint(
-			beachLineRoot,
-			GetMousePosition().x,
-			directrix
-		);
-		if (intersectedArc != NULL && intersectedArc->type == ARC)
-		{
-			DrawParabola(
-				intersectedArc->data.arc.focus,
-				directrix,
-				BOARD_WIDTH,
-				BOARD_HEIGHT,
-				GRAY
-			);
-		}
+		// BeachLineItem * intersectedArc = BLFindArcAbovePoint(
+		// 	beachLineRoot,
+		// 	GetMousePosition().x,
+		// 	directrix
+		// );
+		// if (intersectedArc != NULL && intersectedArc->type == ARC)
+		// {
+		// 	DrawParabola(
+		// 		intersectedArc->data.arc.focus,
+		// 		directrix,
+		// 		BOARD_WIDTH,
+		// 		BOARD_HEIGHT,
+		// 		GRAY
+		// 	);
+		// }
 
 		DrawLine(0, directrix, BOARD_WIDTH, directrix, WHITE);
 
@@ -781,10 +781,15 @@ int main ()
 			// Dots
 			// DrawCircleV(seeds[i], 2.0, WHITE);
 
-			// Coloured numbers
-			DrawCircleV(seeds[i], 7.0, BLACK);
+			// Coloured
 			Color col = ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f);
-			DrawText(TextFormat("%d", i + 1), (sint32)seeds[i].x - 3, (sint32)seeds[i].y - 5, 10, col);
+
+			// Dots
+			DrawCircleV(seeds[i], 2.0, col);
+
+			// Numbers
+			// DrawCircleV(seeds[i], 7.0, BLACK);
+			// DrawText(TextFormat("%d", i + 1), (sint32)seeds[i].x - 3, (sint32)seeds[i].y - 5, 10, col);
 		}
 		
 		DrawFPS(10, 10);
@@ -794,30 +799,27 @@ int main ()
 		if (IsKeyPressed(KEY_A))
 		{
 			// Process Seed event
-			BeachLineItem * newItem = (BeachLineItem *)malloc(sizeof(BeachLineItem));
-			newItem->type = ARC;
-			newItem->data.arc.seed = bLSeedIndex;
-			newItem->data.arc.focus = seeds[bLSeedIndex];
-			newItem->parent = NULL;
-			newItem->left = NULL;
-			newItem->right = NULL;
 
-			bLSeedIndex++;
-
-			if (beachLineRoot == NULL)
+			// temp
+			// create seed event
+			SweepEvent seedEvent = 
 			{
-				beachLineRoot = newItem;
-			}
-			else
-			{
-				BeachLineItem * leaf = beachLineRoot;
-				while (leaf->right != NULL)
+				.type = SEED_EVENT,
+				.yValue = seeds[bLSeedIndex].y,
+				.data.seedEvent = 
 				{
-					leaf = leaf->right;
+					.seedIndex = bLSeedIndex,
+					.position = seeds[bLSeedIndex]
 				}
-				leaf->right = newItem;
-				newItem->parent = leaf;
-			}
+			};
+
+			beachLineRoot = BLInsertArc(
+				beachLineRoot,
+				seedEvent,
+				seedEvent.yValue
+			);
+			
+			bLSeedIndex ++;
 		}
 		if (IsKeyPressed(KEY_D))
 		{
@@ -827,7 +829,15 @@ int main ()
 		}
 		if (IsKeyPressed(KEY_W))
 		{
-			printf("BL item type: %s\n", intersectedArc->type == ARC ? "ARC" : intersectedArc->type == EDGE ? "EDGE" : "UNKNOWN");
+			Vector2 foco = seeds[0];
+			float xPos = GetMousePosition().x;
+			float directr = GetMousePosition().y;
+			float resu = GetArcHeightAtX(
+				foco,
+				directr,
+				xPos
+			);
+			printf("%f,%f\n%f == %f\n", foco.x, foco.y, resu, Vector2Distance((Vector2){xPos,  directr + resu}, foco));
 		}
 
 		if (IsKeyPressed(KEY_SPACE))

@@ -221,11 +221,31 @@ void VorVertexListFree(VorVertexList * vvl)
 
 float GetArcHeightAtX(Vector2 focus, float x, float directrixY)
 {
-    float a = 1.0f / (4.0f * (focus.y - directrixY));
-    float c = (focus.y + directrixY) * 0.5f;
+    // Broken or something
+    // float a = 1.0f / (4.0f * (focus.y - directrixY));
+    // float c = (focus.y + directrixY) * 0.5f;
 
-    float w = x - focus.x;
-    return a * w * w + c;
+    // float w = x - focus.x;
+
+    // return a * w * w + c;
+
+
+    // Formula for distance to directrix at x
+    // v = (f_y - d) / 2
+    // height = ((x - f_x)^2 / 4v) + v
+
+    // float v = (focus.y - directrixY) * 0.5f;
+    // float height = ((x - focus.x) * (x - focus.x)) / (4.0f * v) + v;
+    // return height;
+
+    // Formula for height of parabola from origin at x
+    // v =\frac{\left(f_{y}-d_{y}\right)}{2}
+    // h_{y} =\frac{\left(h_{x}-f_{x}\right)^{2}}{4v}+f_{y}-v
+    // v = (focus.y - directrixY) / 2
+    // height = ((x - focus.x)^2 / 4v) + focus.y - v
+    float v = (focus.y - directrixY) * 0.5f;
+    float height = ((x - focus.x) * (x - focus.x)) / (4.0f * v) + focus.y - v;
+    return height;
 }
 
 void DrawParabola(Vector2 focus, float directrixY, uint16 boardWidth, uint16 boardHeight, Color col)
@@ -248,7 +268,22 @@ void DrawParabola(Vector2 focus, float directrixY, uint16 boardWidth, uint16 boa
     {
         DrawLineV(curvePts[i - 1], curvePts[i], col);
     }
+
+    // for (uint8 i = 0; i < 21; i++)
+    // {
+    //     float x = focus.x - 200.0f + (400.0f / 20.0f) * i;
+    //     DrawCircleV(
+    //         (Vector2){
+    //             x,
+    //             GetArcHeightAtX(focus, x, directrixY)
+    //         },
+    //         1.0f,
+    //         col
+    //     );
+    // }
+    
 }
+
 #pragma region GeoBLStructures
 typedef struct Edge
 {
@@ -262,10 +297,12 @@ typedef struct CompleteEdge
     Vector2 start;
     Vector2 end;
 } CompleteEdge;
+typedef struct SweepEvent SweepEvent;
 typedef struct Arc
 {
     uint16 seed;
     Vector2 focus;
+    SweepEvent * circleEvent;
 } Arc;
 #pragma endregion
 
@@ -367,14 +404,70 @@ typedef struct BeachLineItem
     struct BeachLineItem * left;
     struct BeachLineItem * right;
 
-    union data{
+    union {
         Arc arc;
         Edge edge;
     } data;
 } BeachLineItem;
 #pragma endregion
 
+#pragma region SweepLineStructures
+typedef enum SweepEventType
+{
+    SEED_EVENT,
+    CIRCLE_EVENT
+} SweepEventType;
+
+typedef struct SeedEvent
+{
+    uint16 seedIndex;
+    Vector2 position;
+} SeedEvent;
+
+typedef struct CircleEvent
+{
+    Vector2 center;
+    BeachLineItem * arc;
+    char valid;
+} CircleEvent;
+
+typedef struct SweepEvent
+{
+    SweepEventType type;
+    float yValue;
+    union {
+        SeedEvent seedEvent;
+        CircleEvent circleEvent;
+    } data;
+} SweepEvent;
+
+#pragma endregion
+
 #pragma region BinTreeFunctions
+BeachLineItem * CreateArc(Vector2 focus, uint16 seedIndex)
+{
+    BeachLineItem * newItem = (BeachLineItem *)malloc(sizeof(BeachLineItem));
+    newItem->type = ARC;
+    newItem->data.arc.seed = seedIndex;
+    newItem->data.arc.focus = focus;
+    newItem->parent = NULL;
+    newItem->left = NULL;
+    newItem->right = NULL;
+    newItem->data.arc.circleEvent = NULL;
+    return newItem;
+}
+BeachLineItem * CreateEdge(Vector2 start, Vector2 direction)
+{
+    BeachLineItem * newItem = (BeachLineItem *)malloc(sizeof(BeachLineItem));
+    newItem->type = EDGE;
+    newItem->data.edge.start = start;
+    newItem->data.edge.direction = direction;
+    newItem->data.edge.infinite = 1;
+    newItem->parent = NULL;
+    newItem->left = NULL;
+    newItem->right = NULL;
+    return newItem;
+}
 void BLDelete(BeachLineItem ** root)
 {
     if (*root == NULL) return;
@@ -391,7 +484,7 @@ void BLDelete(BeachLineItem ** root)
 BeachLineItem * BLGetFirstLeftParent(BeachLineItem * item)
 {
     BeachLineItem * current = item;
-    while (current->parent != NULL && current->parent->left == current)
+    while (NULL != current->parent && current->parent->left == current)
     {
         current = current->parent;
     }
@@ -408,10 +501,10 @@ BeachLineItem * BLGetFirstRightParent(BeachLineItem * item)
 }
 BeachLineItem * BLGetFirstLeftLeaf(BeachLineItem * item)
 {
-    if (item == NULL) return NULL;
+    if (NULL == item->left) return NULL;
 
-    BeachLineItem * current = current->left;
-    while (current->right != NULL)
+    BeachLineItem * current = item->left;
+    while (NULL != current->right)
     {
         current = current->right;
     }
@@ -419,14 +512,47 @@ BeachLineItem * BLGetFirstLeftLeaf(BeachLineItem * item)
 }
 BeachLineItem * BLGetFirstRightLeaf(BeachLineItem * item)
 {
-    if (item == NULL) return NULL;
+    if (NULL == item->right) return NULL;
 
-    BeachLineItem * current = current->right;
-    while (current->left != NULL)
+    BeachLineItem * current = item->right;
+    while (NULL != current->left)
     {
         current = current->left;
     }
     return current;
+}
+void BLSetLeftChild(BeachLineItem * parent, BeachLineItem * child)
+{
+    parent->left = child;
+    if (NULL != child)
+    {
+        child->parent = parent;
+    }
+}
+void BLSetRightChild(BeachLineItem * parent, BeachLineItem * child)
+{
+    parent->right = child;
+    if (NULL != child)
+    {
+        child->parent = parent;
+    }
+}
+void BLSetParentFromTemplate(BeachLineItem * item, BeachLineItem * template)
+{
+    if (NULL == template->parent)
+    {
+        item->parent = NULL;
+        return;
+    }
+
+    if (template->parent->left == template)
+    {
+        BLSetLeftChild(template->parent, item);
+    }
+    else if (template->parent->right == template)
+    {
+        BLSetRightChild(template->parent, item);
+    }
 }
 BeachLineItem * BLFindArcAbovePoint(BeachLineItem * root, float point, float directrixY)
 {
@@ -465,9 +591,72 @@ BeachLineItem * BLFindArcAbovePoint(BeachLineItem * root, float point, float dir
 
     return current;
 }
-void BLInsertArc(BeachLineItem ** root, uint16 seedIndex)
+BeachLineItem * BLInsertArc(BeachLineItem * root, SweepEvent event, float directrixY)
 {
+    // Case 0: invalid event
+    if (event.type != SEED_EVENT)
+    {
+        return NULL;
+    }
 
+    // Case 1: empty tree
+    if (root == NULL)
+    {
+        BeachLineItem * newItem = (BeachLineItem *)malloc(sizeof(BeachLineItem));
+        newItem->type = ARC;
+        newItem->data.arc.seed = event.data.seedEvent.seedIndex;
+        newItem->data.arc.focus = event.data.seedEvent.position;
+        newItem->parent = NULL;
+        newItem->left = NULL;
+        newItem->right = NULL;
+
+        root = newItem;
+        return newItem;
+    }
+
+    // Default case: non-empty tree
+    Vector2 point = event.data.seedEvent.position;
+    uint16 seedIndex = event.data.seedEvent.seedIndex;
+    BeachLineItem * arcAbove = BLFindArcAbovePoint(root, point.x, directrixY);
+    if (arcAbove == NULL)
+    {
+        puts("Error: Could not find arc above point in BLInsertArc");
+        return NULL;
+    }
+
+    BeachLineItem * splitArcLeft = CreateArc(arcAbove->data.arc.focus, arcAbove->data.arc.seed);
+    BeachLineItem * splitArcRight = CreateArc(arcAbove->data.arc.focus, arcAbove->data.arc.seed);
+    BeachLineItem * newArc = CreateArc(point, seedIndex);
+
+    float intersectionY = GetArcHeightAtX(arcAbove->data.arc.focus, point.x, directrixY);
+
+    Vector2 edgeStart = (Vector2){ point.x, intersectionY };
+    Vector2 focusOffset = Vector2Subtract(point, arcAbove->data.arc.focus);
+    Vector2 edgeDir = Vector2Normalize((Vector2){ focusOffset.y, -focusOffset.x });
+    BeachLineItem * edgeLeft = CreateEdge(edgeStart, edgeDir);
+    BeachLineItem * edgeRight = CreateEdge(edgeStart, Vector2Negate(edgeDir));
+
+    BLSetParentFromTemplate(edgeLeft, arcAbove);
+    BLSetLeftChild(edgeLeft, splitArcLeft);
+    BLSetRightChild(edgeLeft, edgeRight);
+    BLSetLeftChild(edgeRight, newArc);
+    BLSetRightChild(edgeRight, splitArcRight);
+
+    BeachLineItem * newRoot = root;
+    if (root == arcAbove)
+    {
+        newRoot = edgeLeft;
+    }
+    if (NULL != arcAbove->data.arc.circleEvent)
+    {
+        // arcAbove->data.arc.circleEvent->data.circleEvent.valid = 0;
+    }
+
+    free(arcAbove);
+
+    // Add circle events for splitArcLeft and splitArcRight here
+
+    return newRoot;
 }
 void DrawBeachLine(uint16 seedCount, BeachLineItem * item, float directrix, uint16 boardWidth, uint16 boardHeight)
 {
@@ -483,7 +672,29 @@ void DrawBeachLine(uint16 seedCount, BeachLineItem * item, float directrix, uint
             ColorFromHSV(((float)item->data.arc.seed / (float)seedCount) * 360.0f, 1.0f, 0.5f)
         );
     }
+    if (item->type == EDGE)
+    {
+        Vector2 edgeStart = item->data.edge.start;
+        Vector2 edgeEnd;
+        if (item->data.edge.infinite)
+        {
+            edgeEnd = (Vector2){
+                edgeStart.x + item->data.edge.direction.x * 1000.0f,
+                edgeStart.y + item->data.edge.direction.y * 1000.0f
+            };
+        }
+        else
+        {
+            edgeEnd = (Vector2){
+                edgeStart.x + item->data.edge.direction.x,
+                edgeStart.y + item->data.edge.direction.y
+            };
+        }
+        DrawLineV(edgeStart, edgeEnd, WHITE);
+    }
 
     DrawBeachLine(seedCount, item->left, directrix, boardWidth, boardHeight);
     DrawBeachLine(seedCount, item->right, directrix, boardWidth, boardHeight);
 }
+
+#pragma endregion
