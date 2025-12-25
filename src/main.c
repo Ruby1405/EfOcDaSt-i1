@@ -712,12 +712,21 @@ int main ()
 			DrawParabola(
 				seeds[i],
 				directrix,
+				0.0f,
+				BOARD_WIDTH,
+				BOARD_HEIGHT,
 				BOARD_WIDTH,
 				BOARD_HEIGHT,
 				ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f)
 			);
 		}
-		DrawBeachLine(SEED_COUNT, beachLineRoot, directrix, BOARD_WIDTH, BOARD_HEIGHT);
+		// DrawBeachLine(SEED_COUNT, beachLineRoot, directrix, BOARD_WIDTH, BOARD_HEIGHT);
+		DrawBeachLineItem(
+			beachLineRoot,
+			directrix,
+			BOARD_WIDTH,
+			BOARD_HEIGHT
+		);
 		// BeachLineItem * intersectedArc = BLFindArcAbovePoint(
 		// 	beachLineRoot,
 		// 	GetMousePosition().x,

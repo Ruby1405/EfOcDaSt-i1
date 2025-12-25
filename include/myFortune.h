@@ -247,43 +247,6 @@ float GetArcHeightAtX(Vector2 focus, float x, float directrixY)
     float height = ((x - focus.x) * (x - focus.x)) / (4.0f * v) + focus.y - v;
     return height;
 }
-
-void DrawParabola(Vector2 focus, float directrixY, uint16 boardWidth, uint16 boardHeight, Color col)
-{
-    float x = 0.0f;
-    Vector2 curvePts[boardWidth];
-
-    for (uint16 i = 0; i < boardWidth; i++)
-    {
-        curvePts[i] = (Vector2){
-            x,
-            GetArcHeightAtX(focus, x, directrixY)
-        };
-        
-        // curvePts[i].y = boardHeight - curvePts[i].y;
-        x += 1.0f;
-    }
-
-    for (uint16 i = 1; i < boardWidth; i++)
-    {
-        DrawLineV(curvePts[i - 1], curvePts[i], col);
-    }
-
-    // for (uint8 i = 0; i < 21; i++)
-    // {
-    //     float x = focus.x - 200.0f + (400.0f / 20.0f) * i;
-    //     DrawCircleV(
-    //         (Vector2){
-    //             x,
-    //             GetArcHeightAtX(focus, x, directrixY)
-    //         },
-    //         1.0f,
-    //         col
-    //     );
-    // }
-    
-}
-
 #pragma region GeoBLStructures
 typedef struct Edge
 {
@@ -658,43 +621,181 @@ BeachLineItem * BLInsertArc(BeachLineItem * root, SweepEvent event, float direct
 
     return newRoot;
 }
-void DrawBeachLine(uint16 seedCount, BeachLineItem * item, float directrix, uint16 boardWidth, uint16 boardHeight)
-{
-    if (item == NULL) return;
-
-    if (item->type == ARC)
-    {
-        DrawParabola(
-            item->data.arc.focus,
-            directrix,
-            boardWidth,
-            boardHeight,
-            ColorFromHSV(((float)item->data.arc.seed / (float)seedCount) * 360.0f, 1.0f, 0.5f)
-        );
-    }
-    if (item->type == EDGE)
-    {
-        Vector2 edgeStart = item->data.edge.start;
-        Vector2 edgeEnd;
-        if (item->data.edge.infinite)
-        {
-            edgeEnd = (Vector2){
-                edgeStart.x + item->data.edge.direction.x * 1000.0f,
-                edgeStart.y + item->data.edge.direction.y * 1000.0f
-            };
-        }
-        else
-        {
-            edgeEnd = (Vector2){
-                edgeStart.x + item->data.edge.direction.x,
-                edgeStart.y + item->data.edge.direction.y
-            };
-        }
-        DrawLineV(edgeStart, edgeEnd, WHITE);
-    }
-
-    DrawBeachLine(seedCount, item->left, directrix, boardWidth, boardHeight);
-    DrawBeachLine(seedCount, item->right, directrix, boardWidth, boardHeight);
-}
-
 #pragma endregion
+#pragma region DRAW
+void DrawCompleteEdge(Vector2 start, Vector2 end)
+{
+    Vector2 screenSpaceStart = {start.x, start.y};
+    Vector2 screenSpaceEnd = {end.x, end.y};
+    DrawLineV(screenSpaceStart, screenSpaceEnd, VIOLET);
+}
+void DrawEdge(Vector2 start, Vector2 direction, Vector2 minCorner, Vector2 maxCorner)
+{
+    float dist = 1000.0f;
+    if (0 != direction.x)
+    {
+        float endX = start.x + dist * direction.x;
+        endX = fmaxf(endX, minCorner.x);
+        endX = fminf(endX, maxCorner.x);
+        dist = (endX - start.x) / direction.x;
+    }
+    else // 0 == direction.x
+    {
+        float endY = start.y + dist * direction.y;
+        endY = fmaxf(endY, minCorner.y);
+        endY = fminf(endY, maxCorner.y);
+        dist = fabsf(endY - start.y);
+    }
+
+    Vector2 end = {
+        start.x + dist * direction.x,
+        start.y + dist * direction.y
+    };
+
+    Vector2 screenSpaceStart = {start.x, start.y};
+    Vector2 screenSpaceEnd = {end.x, end.y};
+    DrawLineV(screenSpaceStart, screenSpaceEnd, WHITE);
+}
+void DrawParabola(Vector2 focus, float directrixY, float minX, float maxX, float maxY, uint16 boardWidth, uint16 boardHeight, Color col)
+{
+    Arc arc = {
+        .focus = focus
+    };
+
+    uint16 pointCount = 50;
+    Vector2 curvePts[pointCount];
+
+    if (!isfinite(GetArcHeightAtX(focus, 0.0f, directrixY)))
+    {
+        Vector2 min = {focus.x - 1.0f, focus.y};
+        Vector2 max = {focus.x + 1.0f, maxY};
+
+        DrawEdge((Vector2){focus.x, directrixY}, (Vector2){0.0f, 1.0f}, min, max);
+    }
+
+    if (maxX < minX) return;
+
+    float x = minX;
+    float xInterval = (maxX - minX) / (pointCount - 1);
+
+    for (uint16 i = 0; i < pointCount; i++)
+    {
+        curvePts[i] = (Vector2){
+            x,
+            GetArcHeightAtX(focus, x, directrixY)
+        };
+        
+        x += 1.0f;
+    }
+
+    for (uint16 i = 1; i < pointCount; i++)
+    {
+        DrawLineV(curvePts[i - 1], curvePts[i], col);
+    }
+}
+void DrawBeachLineItem(BeachLineItem * item, float directrix, float boardWidth, float boardHeight)
+{
+    if (NULL == item) return;
+
+    float minX = 0.0f;
+    float maxX = boardWidth;
+    if (ARC == item->type)
+    {
+        BeachLineItem * prev = BLGetFirstLeftLeaf(item);
+        BeachLineItem * next = BLGetFirstRightLeaf(item);
+
+        float maxY = (item->data.arc.focus.y + directrix) * 0.5f;
+        if (NULL != prev)
+        {
+            Vector2 intersection;
+            char hit = GetEdgeArcIntersect(prev->data.edge, item->data.arc, directrix, &intersection);
+            if (hit)
+            {
+                minX = fminf(boardWidth, fmaxf(0.0f, intersection.x));
+            }
+        }
+        if (NULL != next)
+        {
+            Vector2 intersection;
+            char hit = GetEdgeArcIntersect(next->data.edge, item->data.arc, directrix, &intersection);
+            if (hit)
+            {
+                maxX = fminf(boardWidth, fmaxf(0.0f, intersection.x));
+                maxY = fmaxf(maxY, intersection.y);
+            }
+        }
+        DrawParabola(item->data.arc.focus, directrix, minX, maxX, maxY, boardWidth, boardHeight, BLUE);
+    }
+    else if (EDGE == item->type)
+    {
+        BeachLineItem * prev = BLGetFirstLeftLeaf(item);
+        BeachLineItem * next = BLGetFirstRightLeaf(item);
+
+        float minY = item->data.edge.start.y;
+        float maxY = minY;
+
+        if (NULL != prev)
+        {
+            Vector2 intersection;
+            char hit = GetEdgeArcIntersect(item->data.edge, prev->data.arc, directrix, &intersection);
+            if (hit)
+            {
+                minX = intersection.x;
+                minY = fminf(minY, intersection.y);
+            }
+        }
+        if (NULL != next)
+        {
+            Vector2 intersection;
+            char hit = GetEdgeArcIntersect(item->data.edge, next->data.arc, directrix, &intersection);
+            if (hit)
+            {
+                maxX = intersection.x;
+                maxY = fmaxf(maxX, intersection.y);
+            }
+        }
+        DrawEdge(item->data.edge.start, item->data.edge.direction, (Vector2){minX, minY}, (Vector2){maxX, maxY});
+    }
+
+    DrawBeachLineItem(item->left, directrix, boardWidth, boardHeight);
+    DrawBeachLineItem(item->right, directrix, boardWidth, boardHeight);
+}
+// void DrawBeachLine(uint16 seedCount, BeachLineItem * item, float directrix, uint16 boardWidth, uint16 boardHeight)
+// {
+//     if (item == NULL) return;
+
+//     if (item->type == ARC)
+//     {
+//         // DrawParabola(
+//         //     item->data.arc.focus,
+//         //     directrix,
+//         //     boardWidth,
+//         //     boardHeight,
+//         //     ColorFromHSV(((float)item->data.arc.seed / (float)seedCount) * 360.0f, 1.0f, 0.5f)
+//         // );
+//     }
+//     if (item->type == EDGE)
+//     {
+//         Vector2 edgeStart = item->data.edge.start;
+//         Vector2 edgeEnd;
+//         if (item->data.edge.infinite)
+//         {
+//             edgeEnd = (Vector2){
+//                 edgeStart.x + item->data.edge.direction.x * 1000.0f,
+//                 edgeStart.y + item->data.edge.direction.y * 1000.0f
+//             };
+//         }
+//         else
+//         {
+//             edgeEnd = (Vector2){
+//                 edgeStart.x + item->data.edge.direction.x,
+//                 edgeStart.y + item->data.edge.direction.y
+//             };
+//         }
+//         DrawLineV(edgeStart, edgeEnd, WHITE);
+//     }
+
+//     DrawBeachLine(seedCount, item->left, directrix, boardWidth, boardHeight);
+//     DrawBeachLine(seedCount, item->right, directrix, boardWidth, boardHeight);
+// }
+#pragma
