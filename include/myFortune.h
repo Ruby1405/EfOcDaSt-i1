@@ -670,7 +670,7 @@ void DrawParabola(Vector2 focus, float directrixY, float minX, float maxX, float
         Vector2 min = {focus.x - 1.0f, focus.y};
         Vector2 max = {focus.x + 1.0f, maxY};
 
-        DrawEdge((Vector2){focus.x, directrixY}, (Vector2){0.0f, 1.0f}, min, max);
+        DrawEdge((Vector2){focus.x, directrixY}, (Vector2){0.0f, -1.0f}, min, max);
     }
 
     if (maxX < minX) return;
@@ -680,12 +680,10 @@ void DrawParabola(Vector2 focus, float directrixY, float minX, float maxX, float
 
     for (uint16 i = 0; i < pointCount; i++)
     {
-        curvePts[i] = (Vector2){
-            x,
-            GetArcHeightAtX(focus, x, directrixY)
-        };
+        curvePts[i] = (Vector2){x, GetArcHeightAtX(focus, x, directrixY)};
         
-        x += 1.0f;
+        // curvePts[i].y = boardHeight - curvePts[i].y;
+        x += xInterval;
     }
 
     for (uint16 i = 1; i < pointCount; i++)
