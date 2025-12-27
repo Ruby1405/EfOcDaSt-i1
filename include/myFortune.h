@@ -437,6 +437,12 @@ typedef struct SweepEvent
     } data;
 } SweepEvent;
 
+typedef struct EventQueue
+{
+    SweepEvent ** events;
+    // TODO make EventQueue 
+} EventQueue;
+
 #pragma endregion
 
 #pragma region BinTreeFunctions
@@ -587,10 +593,6 @@ BeachLineItem * BLFindArcAbovePoint(BeachLineItem * root, float point, float dir
 
     return current;
 }
-typedef struct EventQueue
-{
-
-} EventQueue;
 char CollisionEdgeEdge(Edge * e0, Edge * e1, Vector2 * intersection)
 {
     float dx = e1->start.x - e0->start.x;
