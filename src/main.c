@@ -81,6 +81,8 @@ int main ()
 	#pragma region FortuneSollution
 	// ------------- Fortune's algorithm sollution --------------
 	BeachLineItem * beachLineRoot = NULL;
+	CompleteEdgeList completeEdges;
+	CompleteEdgeListInit(&completeEdges, 256);
 	uint16 bLSeedIndex = 0;
 
 	// uint16List activeSeedBuffer;
@@ -229,6 +231,7 @@ int main ()
 		#pragma region FortuneSollution
 		// ------------- Fortune's algorithm sollution --------------
 		// Reset data structures
+		CompleteEdgeListClear(&completeEdges);
 
 		// Sort seeds by y value ascending
 		for (uint16 i = 0; i < SEED_COUNT; i++)

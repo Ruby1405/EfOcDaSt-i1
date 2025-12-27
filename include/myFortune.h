@@ -260,6 +260,12 @@ typedef struct CompleteEdge
     Vector2 start;
     Vector2 end;
 } CompleteEdge;
+typedef struct CompleteEdgeList
+{
+    CompleteEdge ** edges;
+    uint16 size;
+    uint16 capacity;
+} CompleteEdgeList;
 typedef struct SweepEvent SweepEvent;
 typedef struct Arc
 {
@@ -270,6 +276,33 @@ typedef struct Arc
 #pragma endregion
 
 #pragma region GeoBLFunctions
+void CompleteEdgeListInit(CompleteEdgeList * cel, uint16 capacity)
+{
+    cel->size = 0;
+    cel->capacity = capacity;
+    cel->edges = (CompleteEdge **)malloc(sizeof(CompleteEdge *) * cel->capacity);
+}
+void CompleteEdgeListAdd(CompleteEdgeList * cel, CompleteEdge * e)
+{
+    if (cel->size >= cel->capacity)
+    {
+        cel->capacity *= 2;
+        cel->edges = (CompleteEdge **)realloc(cel->edges, sizeof(CompleteEdge *) * cel->capacity);
+    }
+    cel->edges[cel->size] = e;
+    cel->size++;
+}
+void CompleteEdgeListClear(CompleteEdgeList * cel)
+{
+    cel->size = 0;
+}
+void CompleteEdgeListFree(CompleteEdgeList * cel)
+{
+    free(cel->edges);
+    cel->edges = NULL;
+    cel->size = 0;
+    cel->capacity = 0;
+}
 char GetEdgeArcIntersect(Edge edge, Arc arc, float directrixY, Vector2 * intersect)
 {
     // Case 1: vertical edge
@@ -699,10 +732,6 @@ BeachLineItem * BLInsertArc(BeachLineItem * root, SweepEvent event, float direct
 
     return newRoot;
 }
-typedef struct CompleteEdgeList
-{
-
-} CompleteEdgeList;
 BeachLineItem * BLRemoveArc(EventQueue eQ, BeachLineItem * root, CompleteEdgeList * CompleteEdges, SweepEvent event)
 {
     BeachLineItem * arcToRemove = event.data.circleEvent.arc;
@@ -730,7 +759,8 @@ BeachLineItem * BLRemoveArc(EventQueue eQ, BeachLineItem * root, CompleteEdgeLis
         edgeB->start.y = FLT_MAX;
     }
 
-    // TODO Add edges to CompleteEdges list
+    CompleteEdgeListAdd(CompleteEdges, edgeA);
+    CompleteEdgeListAdd(CompleteEdges, edgeB);
 
     Vector2 adjacentArcOffset = Vector2Subtract(
         rightArc->data.arc.focus,
@@ -893,11 +923,7 @@ void DrawBeachLineItem(BeachLineItem * item, float directrix, float boardWidth, 
                 maxY = fmaxf(maxY, intersection.y);
             }
         }
-        
-        // Color col = ColorFromHSV(
-        //     *count * 20.0f, 1.0f, 1.0f
-        // );
-        // (*count)++;
+
         Color col = ColorFromHSV(((float)item->data.arc.seed / (float)seedCount) * 360.0f, 1.0f, 1.0f);
         col.a = 100;
 
@@ -937,59 +963,21 @@ void DrawBeachLineItem(BeachLineItem * item, float directrix, float boardWidth, 
     DrawBeachLineItem(item->left, directrix, boardWidth, boardHeight, seedCount);
     DrawBeachLineItem(item->right, directrix, boardWidth, boardHeight, seedCount);
 }
-// void DrawBeachLine(uint16 seedCount, BeachLineItem * item, float directrix, uint16 boardWidth, uint16 boardHeight)
-// {
-//     if (item == NULL) return;
-
-//     if (item->type == ARC)
-//     {
-//         // DrawParabola(
-//         //     item->data.arc.focus,
-//         //     directrix,
-//         //     boardWidth,
-//         //     boardHeight,
-//         //     ColorFromHSV(((float)item->data.arc.seed / (float)seedCount) * 360.0f, 1.0f, 0.5f)
-//         // );
-//     }
-//     if (item->type == EDGE)
-//     {
-//         Vector2 edgeStart = item->data.edge.start;
-//         Vector2 edgeEnd;
-//         if (item->data.edge.infinite)
-//         {
-//             edgeEnd = (Vector2){
-//                 edgeStart.x + item->data.edge.direction.x * 1000.0f,
-//                 edgeStart.y + item->data.edge.direction.y * 1000.0f
-//             };
-//         }
-//         else
-//         {
-//             edgeEnd = (Vector2){
-//                 edgeStart.x + item->data.edge.direction.x,
-//                 edgeStart.y + item->data.edge.direction.y
-//             };
-//         }
-//         DrawLineV(edgeStart, edgeEnd, WHITE);
-//     }
-
-//     DrawBeachLine(seedCount, item->left, directrix, boardWidth, boardHeight);
-//     DrawBeachLine(seedCount, item->right, directrix, boardWidth, boardHeight);
-// }
 #pragma
-#pragma region Main
-void FortunesAlgorithm(Vector2 * seeds, uint16 seedCount, float cutOffY)
-{
-    // Dynamic lists
-    // Complete edges
-    // Event queue
+// #pragma region Main
+// void FortunesAlgorithm(Vector2 * seeds, uint16 seedCount, float cutOffY)
+// {
+//     // Dynamic lists
+//     // Complete edges
+//     // Event queue
 
-    for(uint16 i = 0; i < seedCount; i++)
-    {
-        Vector2 seedPos = seeds[i];
-        // Create seed event and add to event queue
-    }
-}
-#pragma endregion
+//     for(uint16 i = 0; i < seedCount; i++)
+//     {
+//         Vector2 seedPos = seeds[i];
+//         // Create seed event and add to event queue
+//     }
+// }
+// #pragma endregion
 #pragma region Debug
 void PrintBinTree(BeachLineItem * root, uint16 depth)
 {
