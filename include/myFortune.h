@@ -265,7 +265,7 @@ typedef struct Arc
 {
     uint16 seed;
     Vector2 focus;
-    SweepEvent * circleEvent;
+    SweepEvent * squeezeEvent;
 } Arc;
 #pragma endregion
 
@@ -416,7 +416,7 @@ BeachLineItem * CreateArc(Vector2 focus, uint16 seedIndex)
     newItem->parent = NULL;
     newItem->left = NULL;
     newItem->right = NULL;
-    newItem->data.arc.circleEvent = NULL;
+    newItem->data.arc.squeezeEvent = NULL;
     return newItem;
 }
 BeachLineItem * CreateEdge(Vector2 start, Vector2 direction)
@@ -524,8 +524,8 @@ BeachLineItem * BLFindArcAbovePoint(BeachLineItem * root, float point, float dir
     
     while (current->type != ARC)
     {
-        BeachLineItem * left = BLGetFirstLeftLeaf(current->right);
-        BeachLineItem * right = BLGetFirstRightLeaf(current->left);
+        BeachLineItem * left = BLGetFirstLeftLeaf(current);
+        BeachLineItem * right = BLGetFirstRightLeaf(current);
 
         BeachLineItem * fromLeft = BLGetFirstRightParent(left);
         BeachLineItem * fromRight = BLGetFirstLeftParent(right);
@@ -554,6 +554,80 @@ BeachLineItem * BLFindArcAbovePoint(BeachLineItem * root, float point, float dir
 
     return current;
 }
+typedef struct EventQueue
+{
+
+} EventQueue;
+char CollisionEdgeEdge(Edge * e0, Edge * e1, Vector2 * intersection)
+{
+    float dx = e1->start.x - e0->start.x;
+    float dy = e1->start.y - e0->start.y;
+    float det = e1->direction.x * e0->direction.y - e1->direction.y * e0->direction.x;
+
+    float a = (e1->direction.x * dy - e1->direction.y * dx) / det;
+    if (a < 0.0f && !e0->infinite) return 0;
+
+    float b = (e0->direction.x * dy - e0->direction.y * dx) / det;
+    if (b < 0.0f && !e1->infinite) return 0;
+
+    if (0.0f == a && 0.0f == b && !e0->infinite && !e1->infinite) return 0;
+
+    *intersection = (Vector2){
+        .x = e0->start.x + a * e0->direction.x,
+        .y = e0->start.y + a * e0->direction.y
+    };
+    return 1;
+}
+void AddCircleEvent(EventQueue * eQ, BeachLineItem * arc)
+{
+    BeachLineItem * leftEdge = BLGetFirstLeftParent(arc);
+    BeachLineItem * rightEdge = BLGetFirstRightParent(arc);
+
+    if (NULL == leftEdge || NULL == rightEdge) return;
+
+    Vector2 circleEventPoint;
+    char edgesIntersect = CollisionEdgeEdge(
+        &leftEdge->data.edge,
+        &rightEdge->data.edge,
+        &circleEventPoint
+    );
+    if (!edgesIntersect) return;
+
+    Vector2 circleCenterOffset = Vector2Subtract(arc->data.arc.focus, circleEventPoint);
+
+    float radius = Vector2Length(circleCenterOffset);
+    float circleEventY = circleEventPoint.y + radius;
+
+    if (NULL != arc->data.arc.squeezeEvent)
+    {
+        if (circleEventY >= arc->data.arc.squeezeEvent->yValue)
+        {
+            arc->data.arc.squeezeEvent->data.circleEvent.valid = 0;
+        }
+        else return; // Existing event is earlier
+    }
+
+    SweepEvent * newEvent = (SweepEvent *)malloc(sizeof(SweepEvent));
+    newEvent->type = CIRCLE_EVENT;
+    newEvent->yValue = circleEventY;
+    newEvent->data.circleEvent.arc = arc;
+    newEvent->data.circleEvent.center = circleEventPoint;
+    newEvent->data.circleEvent.valid = 1;
+    // TODO Push to event queue
+
+    arc->data.arc.squeezeEvent = newEvent;
+}
+void VerifyLackOfReferences(BeachLineItem * root, BeachLineItem * target)
+{
+    if (root == NULL) return;
+    if (root->parent == target || root->left == target || root->right == target)
+    {
+        puts("Error: Found reference to deleted node in VerifyLackOfReferences");
+        exit(1);
+    }
+    VerifyLackOfReferences(root->left, target);
+    VerifyLackOfReferences(root->right, target);
+}
 BeachLineItem * BLInsertArc(BeachLineItem * root, SweepEvent event, float directrixY)
 {
     // Case 0: invalid event
@@ -569,6 +643,7 @@ BeachLineItem * BLInsertArc(BeachLineItem * root, SweepEvent event, float direct
         newItem->type = ARC;
         newItem->data.arc.seed = event.data.seedEvent.seedIndex;
         newItem->data.arc.focus = event.data.seedEvent.position;
+        newItem->data.arc.squeezeEvent = NULL;
         newItem->parent = NULL;
         newItem->left = NULL;
         newItem->right = NULL;
@@ -595,7 +670,7 @@ BeachLineItem * BLInsertArc(BeachLineItem * root, SweepEvent event, float direct
 
     Vector2 edgeStart = (Vector2){ point.x, intersectionY };
     Vector2 focusOffset = Vector2Subtract(point, arcAbove->data.arc.focus);
-    Vector2 edgeDir = Vector2Normalize((Vector2){ focusOffset.y, -focusOffset.x });
+    Vector2 edgeDir = Vector2Normalize((Vector2){ -focusOffset.y, focusOffset.x });
     BeachLineItem * edgeLeft = CreateEdge(edgeStart, edgeDir);
     BeachLineItem * edgeRight = CreateEdge(edgeStart, Vector2Negate(edgeDir));
 
@@ -610,15 +685,111 @@ BeachLineItem * BLInsertArc(BeachLineItem * root, SweepEvent event, float direct
     {
         newRoot = edgeLeft;
     }
-    if (NULL != arcAbove->data.arc.circleEvent)
+    if (NULL != arcAbove->data.arc.squeezeEvent)
     {
-        // arcAbove->data.arc.circleEvent->data.circleEvent.valid = 0;
+        arcAbove->data.arc.squeezeEvent->data.circleEvent.valid = 0;
     }
 
+    VerifyLackOfReferences(newRoot, arcAbove);
     free(arcAbove);
 
-    // Add circle events for splitArcLeft and splitArcRight here
+    // TODO Add eventQueue
+    AddCircleEvent(NULL, splitArcLeft);
+    AddCircleEvent(NULL, splitArcRight);
 
+    return newRoot;
+}
+typedef struct CompleteEdgeList
+{
+
+} CompleteEdgeList;
+BeachLineItem * BLRemoveArc(EventQueue eQ, BeachLineItem * root, CompleteEdgeList * CompleteEdges, SweepEvent event)
+{
+    BeachLineItem * arcToRemove = event.data.circleEvent.arc;
+
+    BeachLineItem * leftEdge = BLGetFirstLeftParent(arcToRemove);
+    BeachLineItem * rightEdge = BLGetFirstRightParent(arcToRemove);
+
+    BeachLineItem * leftArc = BLGetFirstLeftLeaf(leftEdge);
+    BeachLineItem * rightArc = BLGetFirstRightLeaf(rightEdge);
+
+    Vector2 intersection = event.data.circleEvent.center;
+    CompleteEdge * edgeA = (CompleteEdge *)malloc(sizeof(CompleteEdge));
+    edgeA->start = leftEdge->data.edge.start;
+    edgeA->end = intersection;
+    CompleteEdge * edgeB = (CompleteEdge *)malloc(sizeof(CompleteEdge));
+    edgeB->start = rightEdge->data.edge.start;
+    edgeB->end = intersection;
+
+    if (leftEdge->data.edge.infinite)
+    {
+        edgeA->start.y = FLT_MAX;
+    }
+    if (rightEdge->data.edge.infinite)
+    {
+        edgeB->start.y = FLT_MAX;
+    }
+
+    // TODO Add edges to CompleteEdges list
+
+    Vector2 adjacentArcOffset = Vector2Subtract(
+        rightArc->data.arc.focus,
+        leftArc->data.arc.focus
+    );
+    // TODO check this edge if facing the correct direction
+    Vector2 newEdgeDir = Vector2Normalize((Vector2){
+        adjacentArcOffset.y,
+        -adjacentArcOffset.x
+    });
+
+    BeachLineItem * newEdge = CreateEdge(intersection, newEdgeDir);
+
+    BeachLineItem * higherEdge = NULL;
+    BeachLineItem * temp = arcToRemove;
+    while (NULL != temp->parent)
+    {
+        temp = temp->parent;
+        if (temp == leftEdge) higherEdge = leftEdge;
+        if (temp == rightEdge) higherEdge = rightEdge;
+    }
+
+    BLSetParentFromTemplate(newEdge, higherEdge);
+    BLSetLeftChild(newEdge, higherEdge->left);
+    BLSetRightChild(newEdge, higherEdge->right);
+
+    BeachLineItem * remain = NULL;
+    BeachLineItem * parent = arcToRemove->parent;
+    if (parent->left == arcToRemove)
+    {
+        remain = parent->right;
+    }
+    else
+    {
+        remain = parent->left;
+    }
+
+    BLSetParentFromTemplate(remain, parent);
+
+    BeachLineItem * newRoot = root;
+    if (root == leftEdge || root == rightEdge)
+    {
+        newRoot = newEdge;
+    }
+    VerifyLackOfReferences(newRoot, arcToRemove);
+    VerifyLackOfReferences(newRoot, leftEdge);
+    VerifyLackOfReferences(newRoot, rightEdge);
+
+    if (NULL != arcToRemove->data.arc.squeezeEvent )
+    {
+        arcToRemove->data.arc.squeezeEvent->data.circleEvent.valid = 0;
+    }
+
+    free(arcToRemove);
+    free(leftEdge);
+    free(rightEdge);
+
+    AddCircleEvent(&eQ, leftArc);
+    AddCircleEvent(&eQ, rightArc);
     return newRoot;
 }
 #pragma endregion
@@ -691,7 +862,7 @@ void DrawParabola(Vector2 focus, float directrixY, float minX, float maxX, float
         DrawLineV(curvePts[i - 1], curvePts[i], col);
     }
 }
-void DrawBeachLineItem(BeachLineItem * item, float directrix, float boardWidth, float boardHeight)
+void DrawBeachLineItem(BeachLineItem * item, float directrix, float boardWidth, float boardHeight, uint16 seedCount)
 {
     if (NULL == item) return;
 
@@ -699,8 +870,8 @@ void DrawBeachLineItem(BeachLineItem * item, float directrix, float boardWidth, 
     float maxX = boardWidth;
     if (ARC == item->type)
     {
-        BeachLineItem * prev = BLGetFirstLeftLeaf(item);
-        BeachLineItem * next = BLGetFirstRightLeaf(item);
+        BeachLineItem * prev = BLGetFirstLeftParent(item);
+        BeachLineItem * next = BLGetFirstRightParent(item);
 
         float maxY = (item->data.arc.focus.y + directrix) * 0.5f;
         if (NULL != prev)
@@ -722,7 +893,15 @@ void DrawBeachLineItem(BeachLineItem * item, float directrix, float boardWidth, 
                 maxY = fmaxf(maxY, intersection.y);
             }
         }
-        DrawParabola(item->data.arc.focus, directrix, minX, maxX, maxY, boardWidth, boardHeight, BLUE);
+        
+        // Color col = ColorFromHSV(
+        //     *count * 20.0f, 1.0f, 1.0f
+        // );
+        // (*count)++;
+        Color col = ColorFromHSV(((float)item->data.arc.seed / (float)seedCount) * 360.0f, 1.0f, 1.0f);
+        col.a = 100;
+
+        DrawParabola(item->data.arc.focus, directrix, minX, maxX, maxY, boardWidth, boardHeight, col);
     }
     else if (EDGE == item->type)
     {
@@ -755,8 +934,8 @@ void DrawBeachLineItem(BeachLineItem * item, float directrix, float boardWidth, 
         DrawEdge(item->data.edge.start, item->data.edge.direction, (Vector2){minX, minY}, (Vector2){maxX, maxY});
     }
 
-    DrawBeachLineItem(item->left, directrix, boardWidth, boardHeight);
-    DrawBeachLineItem(item->right, directrix, boardWidth, boardHeight);
+    DrawBeachLineItem(item->left, directrix, boardWidth, boardHeight, seedCount);
+    DrawBeachLineItem(item->right, directrix, boardWidth, boardHeight, seedCount);
 }
 // void DrawBeachLine(uint16 seedCount, BeachLineItem * item, float directrix, uint16 boardWidth, uint16 boardHeight)
 // {
@@ -797,3 +976,32 @@ void DrawBeachLineItem(BeachLineItem * item, float directrix, float boardWidth, 
 //     DrawBeachLine(seedCount, item->right, directrix, boardWidth, boardHeight);
 // }
 #pragma
+#pragma region Main
+void FortunesAlgorithm(Vector2 * seeds, uint16 seedCount, float cutOffY)
+{
+    // Dynamic lists
+    // Complete edges
+    // Event queue
+
+    for(uint16 i = 0; i < seedCount; i++)
+    {
+        Vector2 seedPos = seeds[i];
+        // Create seed event and add to event queue
+    }
+}
+#pragma endregion
+#pragma region Debug
+void PrintBinTree(BeachLineItem * root, uint16 depth)
+{
+    if (root == NULL) return;
+
+    for (uint16 i = 0; i < depth; i++)
+    {
+        printf("|");
+    }
+    printf("%s\n", root->type == ARC ? "Arc" : "Edge");
+
+    PrintBinTree(root->left, depth + 1);
+    PrintBinTree(root->right, depth + 1);
+}
+#pragma endregion

@@ -706,26 +706,28 @@ int main ()
 		// }
 		
 		float directrix = GetMousePosition().y;
-		for (uint16 i = 0; i < SEED_COUNT; i++)
-		{
-			if (seeds[i].y > directrix) continue;
-			DrawParabola(
-				seeds[i],
-				directrix,
-				0.0f,
-				BOARD_WIDTH,
-				BOARD_HEIGHT,
-				BOARD_WIDTH,
-				BOARD_HEIGHT,
-				ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f)
-			);
-		}
+		// for (uint16 i = 0; i < SEED_COUNT; i++)
+		// {
+		// 	if (seeds[i].y > directrix) continue;
+		// 	DrawParabola(
+		// 		seeds[i],
+		// 		directrix,
+		// 		0.0f,
+		// 		BOARD_WIDTH,
+		// 		BOARD_HEIGHT,
+		// 		BOARD_WIDTH,
+		// 		BOARD_HEIGHT,
+		// 		ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f)
+		// 	);
+		// }
 		// DrawBeachLine(SEED_COUNT, beachLineRoot, directrix, BOARD_WIDTH, BOARD_HEIGHT);
+		
 		DrawBeachLineItem(
 			beachLineRoot,
 			directrix,
 			BOARD_WIDTH,
-			BOARD_HEIGHT
+			BOARD_HEIGHT,
+			SEED_COUNT
 		);
 		// BeachLineItem * intersectedArc = BLFindArcAbovePoint(
 		// 	beachLineRoot,
@@ -838,15 +840,7 @@ int main ()
 		}
 		if (IsKeyPressed(KEY_W))
 		{
-			Vector2 foco = seeds[0];
-			float xPos = GetMousePosition().x;
-			float directr = GetMousePosition().y;
-			float resu = GetArcHeightAtX(
-				foco,
-				directr,
-				xPos
-			);
-			printf("%f,%f\n%f == %f\n", foco.x, foco.y, resu, Vector2Distance((Vector2){xPos,  directr + resu}, foco));
+			PrintBinTree(beachLineRoot, 0);
 		}
 
 		if (IsKeyPressed(KEY_SPACE))
