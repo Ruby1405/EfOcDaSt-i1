@@ -44,8 +44,8 @@ int main ()
 	// ToggleFullscreen();
 
 	// ----------- my stuff ------------
-	const uint16 MAX_SEED_COUNT = 6;
-	uint16 SEED_COUNT = 6;
+	const uint16 MAX_SEED_COUNT = 20;
+	uint16 SEED_COUNT = 20;
 	const float SEED_SPEED = 20.0f;
 	Vector2 seeds[MAX_SEED_COUNT];
 	for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
@@ -83,34 +83,15 @@ int main ()
 	BeachLineItem * beachLineRoot = NULL;
 	CompleteEdgeList completeEdges;
 	CompleteEdgeListInit(&completeEdges, 256);
-	uint16 bLSeedIndex = 0;
-
-	// uint16List activeSeedBuffer;
-	// uint16ListInit(&activeSeedBuffer, 16);
-	// VorVertexList vorVerts;
-	// VorVertexListInit(&vorVerts, 16);
-	// Polygon voronoiPolygons[MAX_SEED_COUNT];
-
-	// for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
-	// {
-	// 	PolygonInit(&voronoiPolygons[i]);
-	// }
-
-	// EdgeList edgeAlloc;
-	// EdgeListInit(&edgeAlloc, 256);
-	// NodeList nodeAlloc;
-	// NodeListInit(&nodeAlloc, 256);
-	// EventList eventAlloc;
-	// EventListInit(&eventAlloc, 256);
-	// BinaryPriorityQueue PQ;
-	// BPQInit(&PQ, 256);
-	// PNodeList circleCheckList;
-	// PNodeListInit(&circleCheckList, 256);
-	// // Hashtable CurrentArcs;
-	// CircleList currentCircles;
-	// CircleListInit(&currentCircles, 256);
-	// VoronoiGraph voronoiGraph;
-	// VGInit(&voronoiGraph, 256);
+	SweepEvent * events[MAX_SEED_COUNT * 2]; 
+	EventQueue eventQueue = {
+		.events = events,
+		.capacity = MAX_SEED_COUNT * 2,
+		.length = 0,
+		.head = 0,
+		.tail = 0
+	};
+	float directrix = 0;
 	// ----------------------------------------------------------
 	#pragma endregion
 
@@ -231,7 +212,7 @@ int main ()
 		#pragma region FortuneSollution
 		// ------------- Fortune's algorithm sollution --------------
 		// Reset data structures
-		CompleteEdgeListClear(&completeEdges);
+		// CompleteEdgeListClear(&completeEdges);
 
 		// Sort seeds by y value ascending
 		for (uint16 i = 0; i < SEED_COUNT; i++)
@@ -250,408 +231,6 @@ int main ()
 				}
 			}
 		}
-
-		// uint16ListClear(&activeSeedBuffer);
-		// VorVertexListClear(&vorVerts);
-
-		// // Sort seeds by x value descending
-		// for (uint16 i = 0; i < SEED_COUNT; i++)
-		// {
-		// 	for (uint16 ii = i; ii < SEED_COUNT - 1; ii++)
-		// 	{
-		// 		if (seeds[ii].x < seeds[ii + 1].x)
-		// 		{
-		// 			Vector2 temp = seeds[ii];
-		// 			seeds[ii] = seeds[ii + 1];
-		// 			seeds[ii + 1] = temp;
-
-		// 			Vector2 tempV = seedVels[ii];
-		// 			seedVels[ii] = seedVels[ii + 1];
-		// 			seedVels[ii + 1] = tempV;
-		// 		}
-		// 	}
-		// }
-
-		// float sweepLine = 0.0f;
-		// Circumcircle * currentCirclesHead = NULL;
-		// for (uint16 seedI = 0; seedI < SEED_COUNT; seedI++)
-		// {
-		// 	Vector2 seed = seeds[seedI];
-		// 	sweepLine = seed.y;
-
-		// 	// If the sweep line has left a circle, close the circle (process circle event)
-		// 	while (
-		// 		currentCirclesHead != NULL &&
-		// 		CCEventTime(currentCirclesHead) < sweepLine
-		// 	)
-		// 	{
-		// 		// Add circle to voronoi graph
-		// 		VorVertexListAdd(&vorVerts, CCToVorVertex(*currentCirclesHead));
-
-		// 		// Remove circle from active list
-		// 		Circumcircle * toDelete = currentCirclesHead;
-		// 		currentCirclesHead = currentCirclesHead->next;
-		// 		free(toDelete);
-		// 	}
-
-		// 	// Process seed event
-		// 	// Check if seed lies within any existing circumcircles
-		// 	{
-		// 		Circumcircle * c = currentCirclesHead;
-		// 		while (c != NULL)
-		// 		{
-		// 			if (CCcontainsPoint(c, seed))
-		// 			{
-		// 				// Handle case where seed is inside circumcircle
-		// 				// Find the closest point of the circumcircle
-		// 				float minDist = FLT_MAX;
-		// 				char minIndex = 0;
-		// 				for (char p = 0; p < 3; p++)
-		// 				{
-		// 					float dist = Vector2Distance(
-		// 						seed,
-		// 						seeds[c->pointIndices[p]]
-		// 					);
-		// 					if (dist < minDist)
-		// 					{
-		// 						minDist = dist;
-		// 						minIndex = p;
-		// 					}
-		// 				}
-		// 				// Split the circle between the the seed and the closest point
-		// 				// Circle one
-		// 				c->pointIndices[(minIndex + 1) % 3] = seedI;
-		// 				c->center = CCCenter(
-		// 					seeds[c->pointIndices[0]],
-		// 					seeds[c->pointIndices[1]],
-		// 					seeds[c->pointIndices[2]]
-		// 				);
-		// 				c->radius = Vector2Distance(
-		// 					c->center,
-		// 					seeds[seedI]
-		// 				);
-		// 				// Remove circle from list
-		// 				if (currentCirclesHead == c)
-		// 					currentCirclesHead = c->next;
-		// 				else
-		// 					c->prev->next = c->next;
-		// 				if (c->next != NULL)
-		// 					c->next->prev = c->prev;
-		// 				CCAddToList(&currentCirclesHead, c);
-						
-		// 				// Circle two
-		// 				Vector2 center = CCCenter(
-		// 					seeds[c->pointIndices[(minIndex + 2) % 3]],
-		// 					seeds[c->pointIndices[minIndex]],
-		// 					seeds[seedI]
-		// 				);
-		// 				Circumcircle * c2 = CCCreate(
-		// 					c->pointIndices[(minIndex + 2) % 3],
-		// 					c->pointIndices[minIndex],
-		// 					seedI,
-		// 					center,
-		// 					Vector2Distance(
-		// 						center,
-		// 						seeds[seedI]
-		// 					)
-		// 				);
-		// 				CCAddToList(&currentCirclesHead, c2);
-		// 			}
-		// 			c = c->next;
-		// 		}
-		// 	}
-
-		// 	// If there are at least two active seeds, create new circumcircles
-		// 	if (activeSeedBuffer.size >= 2)
-		// 	{
-		// 		// Create all possible circles with the new seed and any two active seeds
-		// 		uint16 p0 = seedI;
-		// 		for (uint16 i = 0; i < activeSeedBuffer.size - 1; i++)
-		// 		{
-		// 			uint16 p1 = activeSeedBuffer.values[i];
-		// 			if (p1 == p0) continue;
-		// 			for (uint16 ii = i + 1; ii < activeSeedBuffer.size; ii++)
-		// 			{
-		// 				uint16 p2 = activeSeedBuffer.values[ii];
-		// 				if (p2 == p0) continue;
-
-		// 				Vector2 center = CCCenter(
-		// 					seeds[p0],
-		// 					seeds[p1],
-		// 					seeds[p2]
-		// 				);
-		// 				float radius = Vector2Distance(
-		// 					center,
-		// 					seeds[p0]
-		// 				);
-
-		// 				// Check if any other seed is inside the circumcircle
-		// 				char validCircle = 1;
-		// 				for (uint16 p3 = 0; p3 < SEED_COUNT; p3++)
-		// 				{
-		// 					if (p3 == p0 || p3 == p1 || p3 == p2) continue;
-		// 					float dist = Vector2Distance(
-		// 						center,
-		// 						seeds[p3]
-		// 					);
-		// 					if (dist < radius)
-		// 					{
-		// 						validCircle = 0;
-		// 						break;
-		// 					}
-		// 				}
-		// 				if (!validCircle) continue;
-
-		// 				// Check if the circle already exists
-		// 				char circleExists = 0;
-		// 				Circumcircle * c = currentCirclesHead;
-		// 				while (c != NULL)
-		// 				{
-		// 					if (
-		// 						(c->pointIndices[0] == p0 ||
-		// 						c->pointIndices[1] == p0 ||
-		// 						c->pointIndices[2] == p0) &&
-		// 						(c->pointIndices[0] == p1 ||
-		// 						c->pointIndices[1] == p1 ||
-		// 						c->pointIndices[2] == p1) &&
-		// 						(c->pointIndices[0] == p2 ||
-		// 						c->pointIndices[1] == p2 ||
-		// 						c->pointIndices[2] == p2)
-		// 					)
-		// 					{
-		// 						circleExists = 1;
-		// 						break;
-		// 					}
-		// 					c = c->next;
-		// 				}
-		// 				if (circleExists) continue;
-
-		// 				// Create the circumcircle and add it to the list
-		// 				Circumcircle * newCircle = CCCreate(
-		// 					p0,
-		// 					p1,
-		// 					p2,
-		// 					center,
-		// 					radius
-		// 				);
-		// 				CCAddToList(&currentCirclesHead, newCircle);
-		// 			}
-		// 		}
-		// 	}
-		// 	uint16ListAdd(&activeSeedBuffer, seedI);
-		// }
-		// // Close any remaining circumcircles
-		// while (
-		// 	currentCirclesHead != NULL
-		// )
-		// {
-		// 	// Add circle to voronoi graph
-		// 	VorVertexListAdd(&vorVerts, CCToVorVertex(*currentCirclesHead));
-
-		// 	// Remove circle from active list
-		// 	Circumcircle * toDelete = currentCirclesHead;
-		// 	currentCirclesHead = currentCirclesHead->next;
-		// 	free(toDelete);
-		// }
-
-		// // Construct voronoi polygons from voronoi vertices
-		// for (uint16 i = 0; i < SEED_COUNT; i++)
-		// {
-		// 	PolygonClear(&voronoiPolygons[i]);
-
-		// 	for (uint16 v = 0; v < vorVerts.size; v++)
-		// 	{
-		// 		uint16 insertionIndex = 0;
-		// 		for (uint16 polyV = 0; polyV < voronoiPolygons[i].pointsCount; polyV++)
-		// 		{
-		// 			float angleA = atan2f(
-		// 				voronoiPolygons[i].points[polyV].y - seeds[i].y,
-		// 				voronoiPolygons[i].points[polyV].x - seeds[i].x
-		// 			);
-		// 			float angleB = atan2f(
-		// 				vorVerts.verts[v].position.y - seeds[i].y,
-		// 				vorVerts.verts[v].position.x - seeds[i].x
-		// 			);
-		// 			if (angleA < angleB)
-		// 			{
-		// 				insertionIndex = polyV + 1;
-		// 			}
-		// 		}
-		// 		PolygonAddPointAt(
-		// 			&voronoiPolygons[i],
-		// 			vorVerts.verts[v].position,
-		// 			insertionIndex
-		// 		);
-		// 	}
-		// 	PolygonAddPoint(
-		// 		&voronoiPolygons[i],
-		// 		seeds[i]
-		// 	);
-		// }
-		
-		
-		
-		// Node * rootNode = NULL;
-		// EdgeListClear(&edgeAlloc);
-		// NodeListClear(&nodeAlloc);
-		// EventListClear(&eventAlloc);
-		// BPQClear(&PQ);
-		// PNodeListClear(&circleCheckList);
-		// CircleListClear(&currentCircles);
-		// VGClear(&voronoiGraph);
-		
-		// for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
-		// {
-		// 	Event * e = EventListAdd(&eventAlloc, (Event){
-		// 		.type = 'S',
-		// 		.point = seeds[i],
-		// 		.nodeP = NULL,
-		// 		.nodeL = NULL,
-		// 		.nodeR = NULL,
-		// 		.valid = 1
-		// 	});
-		// 	BPQPush(&PQ, e);
-		// }
-		// while (PQ.size > 0)
-		// {
-		// 	Event * nextEvent = BPQPop(&PQ);
-		// 	if (nextEvent->type == 'S')
-		// 	{
-		// 		// Handle seed event
-		// 		rootNode = ProcessSeedEvent(
-		// 			&edgeAlloc,
-		// 			&nodeAlloc,
-		// 			&voronoiGraph,
-		// 			nextEvent->point,
-		// 			rootNode,
-		// 			nextEvent->point.y,
-		// 			&circleCheckList
-		// 		);
-		// 	}
-		// 	else if(nextEvent->type == 'C')
-		// 	{
-		// 		// Handle circle event
-		// 		// Current circles
-		// 		CircleListRemoveAt(&currentCircles, CircleListContainsNode(&currentCircles, nextEvent->nodeP));
-		// 		if(!nextEvent->valid) continue;
-		// 		rootNode = ProcessCircleEvent(
-		// 			&edgeAlloc,
-		// 			&nodeAlloc,
-		// 			&voronoiGraph,
-		// 			*nextEvent,
-		// 			rootNode,
-		// 			CircleEventY(nextEvent),
-		// 			&circleCheckList
-		// 		);
-		// 	}
-		// 	else
-		// 	{
-		// 		// Invalid event type
-		// 		printf("Invalid event type encountered: %c\n", nextEvent->type);
-		// 		continue;
-		// 	}
-			
-		// 	for (uint8 i = 0; i < circleCheckList.size; i++)
-		// 	{
-		// 		Node * node = circleCheckList.nodes[i];
-		// 		sint16 cIndex = CircleListContainsNode(&currentCircles, node);
-		// 		if (cIndex >= 0)
-		// 		{
-		// 			currentCircles.events[cIndex]->valid = 0;
-		// 			CircleListRemoveAt(&currentCircles, cIndex);
-		// 		}
-		// 		Event * nE = CircleCheckSeedNode(
-		// 			&eventAlloc,
-		// 			node,
-		// 			nextEvent->type == 'S' ? nextEvent->point.y : CircleEventY(nextEvent)
-		// 		);
-		// 		if (nE != NULL)
-		// 		{
-		// 			BPQPush(&PQ, nE);
-		// 			CircleListAdd(&currentCircles, node, nE);
-		// 		}
-		// 	}
-
-		// 	if (nextEvent->type == 'S')
-		// 	{
-		// 		Vector2 point = nextEvent->point;
-		// 		for (uint16 i = 0; i < currentCircles.size; i++)
-		// 		{
-		// 			float dist1 = Vector2Distance(
-		// 				point,
-		// 				currentCircles.events[i]->center
-		// 			);
-		// 			float dist2 = CircleEventY(currentCircles.events[i]) - currentCircles.events[i]->center.y;
-		// 			if (
-		// 				dist1 < dist2 &&
-		// 				fabsf(dist1 - dist2) > FEM
-		// 			) currentCircles.events[i]->valid = 0;
-		// 		}
-				
-		// 	}
-		// }
-		// CleanUpTree(rootNode);
-
-		// for (uint16 i = 0; i < voronoiGraph.edges.size; i++)
-		// {
-		// 	Edge * edge = voronoiGraph.edges.edges[i];
-		// 	if (edge->done) continue;
-		// 	if (Vector2Equals(edge->vertexB, VERTEX_UNKNOWN))
-		// 	{
-		// 		EdgeAddVertex(edge, VERTEX_INFINITE);
-
-		// 		if (fabsf(edge->leftPoint.y - edge->rightPoint.y) < FEM && 
-		// 			edge->leftPoint.x < edge->rightPoint.x)
-		// 		{
-		// 			Vector2 temp = edge->leftPoint;
-		// 			edge->leftPoint = edge->rightPoint;
-		// 			edge->rightPoint = temp;
-		// 		}
-		// 	}
-		// }
-
-		// uint16 minuteEdgeCount = 0;
-		// uint16 minuteEdgeCap = 16;
-		// Edge ** minuteEdges = (Edge **)malloc(sizeof(Edge *) * minuteEdgeCap);
-		// uint16 * minuteEdgeIndices = (uint16 *)malloc(sizeof(uint16) * minuteEdgeCap);
-		// for (uint16 i = 0; i < voronoiGraph.edges.size; i++)
-		// {
-		// 	Edge * edge = voronoiGraph.edges.edges[i];
-		// 	if (!EdgeIsPartlyInfinite(edge) && Vector2Equals(edge->vertexA, edge->vertexB))
-		// 	{
-		// 		// Add edge to minuteEdges
-		// 		if (minuteEdgeCount >= minuteEdgeCap)
-		// 		{
-		// 			minuteEdgeCap *= 2;
-		// 			minuteEdges = (Edge **)realloc(minuteEdges, sizeof(Edge *) * minuteEdgeCap);
-
-		// 			minuteEdgeIndices = (uint16 *)realloc(minuteEdgeIndices, sizeof(uint16) * minuteEdgeCap);
-		// 		}
-		// 		minuteEdges[minuteEdgeCount] = edge;
-		// 		minuteEdgeIndices[minuteEdgeCount] = i;
-		// 		minuteEdgeCount++;
-
-		// 		// Prevent rounding errors
-		// 		for (uint16 ii = 0; ii < voronoiGraph.edges.size; ii++)
-		// 		{
-		// 			Edge * edge2 = voronoiGraph.edges.edges[ii];
-
-		// 			if (Vector2Equals(edge->vertexA, edge2->vertexA))
-		// 				edge2->vertexA = edge->vertexA;
-		// 			if (Vector2Equals(edge->vertexA, edge2->vertexB))
-		// 				edge2->vertexB = edge->vertexA;
-		// 		}
-		// 	}
-		// }
-		
-		// for (uint16 i = 0; i < minuteEdgeCount; i++)
-		// {
-		// 	VGRemoveEdgeAt(&voronoiGraph, minuteEdgeIndices[i] - i);
-		// }
-
-		// free(minuteEdges);
-		// free(minuteEdgeIndices);
-		
 		// ----------------------------------------------------------
 		#pragma endregion
 
@@ -700,30 +279,11 @@ int main ()
 		#pragma region FortuneSollution
 		// ------------- Fortune's algorithm sollution --------------
 
-		// for (uint16 i = 0; i < SEED_COUNT; i++)
-		// {
-		// 	Color col = ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f);
-		// 	col.a = 100;
-		// 	PolygonDraw(&voronoiPolygons[i], col);
-		// 	PolygonDrawLines(&voronoiPolygons[i], col);
-		// }
-		
-		float directrix = GetMousePosition().y;
-		// for (uint16 i = 0; i < SEED_COUNT; i++)
-		// {
-		// 	if (seeds[i].y > directrix) continue;
-		// 	DrawParabola(
-		// 		seeds[i],
-		// 		directrix,
-		// 		0.0f,
-		// 		BOARD_WIDTH,
-		// 		BOARD_HEIGHT,
-		// 		BOARD_WIDTH,
-		// 		BOARD_HEIGHT,
-		// 		ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f)
-		// 	);
-		// }
-		// DrawBeachLine(SEED_COUNT, beachLineRoot, directrix, BOARD_WIDTH, BOARD_HEIGHT);
+		for (size_t i = 0; i < completeEdges.size; i++)
+		{
+			CompleteEdge edge = *completeEdges.edges[i];
+			DrawLineV(edge.start, edge.end, BLUE);
+		}
 		
 		DrawBeachLineItem(
 			beachLineRoot,
@@ -732,58 +292,55 @@ int main ()
 			BOARD_HEIGHT,
 			SEED_COUNT
 		);
-		// BeachLineItem * intersectedArc = BLFindArcAbovePoint(
-		// 	beachLineRoot,
-		// 	GetMousePosition().x,
-		// 	directrix
-		// );
-		// if (intersectedArc != NULL && intersectedArc->type == ARC)
-		// {
-		// 	DrawParabola(
-		// 		intersectedArc->data.arc.focus,
-		// 		directrix,
-		// 		BOARD_WIDTH,
-		// 		BOARD_HEIGHT,
-		// 		GRAY
-		// 	);
-		// }
 
 		DrawLine(0, directrix, BOARD_WIDTH, directrix, WHITE);
+		DrawText(
+			TextFormat("Directrix: %.2f", directrix),
+			120,
+			(uint16)directrix + 5,
+			10,
+			WHITE
+		);
 
-		// for (uint16 i = 0; i < vorVerts.size; i++)
-		// {
-		// 	DrawCircleV(vorVerts.verts[i].position, 2.0, BLUE);
-		// 	DrawLineV(
-		// 		seeds[vorVerts.verts[i].s0],
-		// 		vorVerts.verts[i].position,
-		// 		GREEN
-		// 	);
-		// 	DrawLineV(
-		// 		seeds[vorVerts.verts[i].s1],
-		// 		vorVerts.verts[i].position,
-		// 		GREEN
-		// 	);
-		// 	DrawLineV(
-		// 		seeds[vorVerts.verts[i].s2],
-		// 		vorVerts.verts[i].position,
-		// 		GREEN
-		// 	);
-		// }
-		
+		// Draw Event Queue
+		DrawText(TextFormat("Event Queue: %d", eventQueue.length), 10, 50, 10, WHITE);
+		for(uint16 i = 0; i < eventQueue.length; i++)
+		{
+			size_t index = (eventQueue.head + i) % eventQueue.capacity;
+			SweepEvent * event = eventQueue.events[index];
+			Color col = (event->type == SEED_EVENT) ? GREEN : (event->data.circleEvent.valid ? BLUE : DARKGRAY);
+			if (event->type == SEED_EVENT)
+			{
+				DrawText(
+					TextFormat(
+						"i%d: S: %d, %.2f",
+						index,
+						event->data.seedEvent.seedIndex + 1,
+						event->yValue
+					),
+					10,
+					70 + i * 15,
+					10,
+					col
+				);
+			}
+			if (event->type == CIRCLE_EVENT)
+			{
+				DrawText(
+					TextFormat(
+						"i%d: C: %d, %.2f",
+						index,
+						event->data.circleEvent.arc->data.arc.seed + 1,
+						event->yValue
+					),
+					10,
+					70 + i * 15,
+					10,
+					col
+				);
+			}
+		}
 
-		// for (uint16 i = 0; i < voronoiGraph.edges.size; i++)
-		// {
-		// 	Edge * vEdge = voronoiGraph.edges.edges[i];
-		// 	DrawLineV(vEdge->leftPoint, vEdge->rightPoint, RED);
-		// 	DrawLineV(vEdge->vertexA, (Vector2){100,100}, GREEN);
-		// 	DrawLineV(vEdge->vertexB, (Vector2){100,100}, GREEN);
-		// }
-		// for (uint16 i = 0; i < voronoiGraph.vertices.size; i++)
-		// {
-		// 	Vector2 v = voronoiGraph.vertices.points[i];
-		// 	DrawCircleV(v, 2.0, BLUE);
-		// }
-		
 		// ----------------------------------------------------------
 		#pragma endregion
 
@@ -799,53 +356,136 @@ int main ()
 			Color col = ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f);
 
 			// Dots
-			DrawCircleV(seeds[i], 2.0, col);
+			// DrawCircleV(seeds[i], 2.0, col);
 
 			// Numbers
-			// DrawCircleV(seeds[i], 7.0, BLACK);
-			// DrawText(TextFormat("%d", i + 1), (sint32)seeds[i].x - 3, (sint32)seeds[i].y - 5, 10, col);
+			DrawCircleV(seeds[i], 7.0, BLACK);
+			DrawText(TextFormat("%d", i + 1), (sint32)seeds[i].x - 3, (sint32)seeds[i].y - 5, 10, col);
 		}
 		
 		DrawFPS(10, 10);
 
 		EndDrawing();
 
-		if (IsKeyPressed(KEY_A))
+		if (IsKeyDown(KEY_A))
 		{
-			// Process Seed event
+			// Advance directrix
+			// Process next event
+			SweepEvent * nextEvent = EventQueuePeek(&eventQueue);
 
-			// temp
-			// create seed event
-			SweepEvent seedEvent = 
+			if (NULL != nextEvent && CIRCLE_EVENT == nextEvent->type && !nextEvent->data.circleEvent.valid)
 			{
-				.type = SEED_EVENT,
-				.yValue = seeds[bLSeedIndex].y,
-				.data.seedEvent = 
-				{
-					.seedIndex = bLSeedIndex,
-					.position = seeds[bLSeedIndex]
-				}
-			};
+				// invalid circle event, skip
+				EventQueuePop(&eventQueue);
+				free(nextEvent);
+				nextEvent = EventQueuePeek(&eventQueue);
+			}
 
-			beachLineRoot = BLInsertArc(
-				beachLineRoot,
-				seedEvent,
-				seedEvent.yValue
-			);
-			
-			bLSeedIndex ++;
+			if (NULL != nextEvent)
+			{
+				if (directrix + GetFrameTime() * 40.0f >= nextEvent->yValue)
+				{
+					// handle event
+					directrix = nextEvent->yValue;
+					if (SEED_EVENT == nextEvent->type)
+					{
+						// Handle seed event
+						beachLineRoot = BLInsertArc(
+							&eventQueue,
+							beachLineRoot,
+							*nextEvent,
+							directrix
+						);
+					}
+					else if (CIRCLE_EVENT == nextEvent->type)
+					{
+						// Handle circle event
+						beachLineRoot = BLRemoveArc(
+							&eventQueue,
+							beachLineRoot,
+							&completeEdges,
+							*nextEvent
+						);
+					}
+					EventQueuePop(&eventQueue);
+					free(nextEvent);
+				}
+				else
+				{
+					directrix += GetFrameTime() * 40.0f;
+				}
+			}
+		}
+		if (IsKeyPressed(KEY_S))
+		{
+			// Jump to next event
+			SweepEvent * nextEvent = EventQueuePeek(&eventQueue);
+
+			if (NULL != nextEvent && CIRCLE_EVENT == nextEvent->type && !nextEvent->data.circleEvent.valid)
+			{
+				// invalid circle event, skip
+				EventQueuePop(&eventQueue);
+				free(nextEvent);
+				nextEvent = EventQueuePeek(&eventQueue);
+			}
+
+			if (NULL != nextEvent)
+			{
+				// handle event
+				directrix = nextEvent->yValue;
+				if (SEED_EVENT == nextEvent->type)
+				{
+					// Handle seed event
+					beachLineRoot = BLInsertArc(
+						&eventQueue,
+						beachLineRoot,
+						*nextEvent,
+						directrix
+					);
+				}
+				else if (CIRCLE_EVENT == nextEvent->type)
+				{
+					// Handle circle event
+					beachLineRoot = BLRemoveArc(
+						&eventQueue,
+						beachLineRoot,
+						&completeEdges,
+						*nextEvent
+					);
+				}
+				EventQueuePop(&eventQueue);
+				free(nextEvent);
+			}
 		}
 		if (IsKeyPressed(KEY_D))
 		{
 			// clear
 			BLDelete(&beachLineRoot);
-			bLSeedIndex = 0;
+			CompleteEdgeListClear(&completeEdges);
+			directrix = 0.0f;
+
+			// Clear event queue and add all seeds as seed events
+			EventQueueClear(&eventQueue);
+			for (uint16 i = 0; i < SEED_COUNT; i++)
+			{
+				SweepEvent * seedEvent = (SweepEvent *)malloc(sizeof(SweepEvent));
+				seedEvent->type = SEED_EVENT;
+				seedEvent->data.seedEvent.seedIndex = i;
+				seedEvent->data.seedEvent.position = seeds[i];
+				seedEvent->yValue = seeds[i].y;
+				
+				EventQueueInsert(&eventQueue, seedEvent);
+			}
 		}
 		if (IsKeyPressed(KEY_W))
 		{
 			PrintBinTree(beachLineRoot, 0);
 		}
-
+		if (IsKeyPressed(KEY_P))
+		{
+			// Pop
+			EventQueuePop(&eventQueue);
+		}
 		if (IsKeyPressed(KEY_SPACE))
 		{
 			manualSeedControl = !manualSeedControl;

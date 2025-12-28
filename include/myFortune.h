@@ -276,32 +276,40 @@ typedef struct Arc
 #pragma endregion
 
 #pragma region GeoBLFunctions
-void CompleteEdgeListInit(CompleteEdgeList * cel, uint16 capacity)
+void CompleteEdgeListInit(CompleteEdgeList * cEL, uint16 capacity)
 {
-    cel->size = 0;
-    cel->capacity = capacity;
-    cel->edges = (CompleteEdge **)malloc(sizeof(CompleteEdge *) * cel->capacity);
+    cEL->size = 0;
+    cEL->capacity = capacity;
+    cEL->edges = (CompleteEdge **)malloc(sizeof(CompleteEdge *) * cEL->capacity);
 }
-void CompleteEdgeListAdd(CompleteEdgeList * cel, CompleteEdge * e)
+void CompleteEdgeListAdd(CompleteEdgeList * cEL, CompleteEdge * e)
 {
-    if (cel->size >= cel->capacity)
+    if (cEL->size >= cEL->capacity)
     {
-        cel->capacity *= 2;
-        cel->edges = (CompleteEdge **)realloc(cel->edges, sizeof(CompleteEdge *) * cel->capacity);
+        cEL->capacity *= 2;
+        cEL->edges = (CompleteEdge **)realloc(cEL->edges, sizeof(CompleteEdge *) * cEL->capacity);
     }
-    cel->edges[cel->size] = e;
-    cel->size++;
+    cEL->edges[cEL->size] = e;
+    cEL->size++;
 }
-void CompleteEdgeListClear(CompleteEdgeList * cel)
+void CompleteEdgeListClear(CompleteEdgeList * cEL)
 {
-    cel->size = 0;
+    for (uint16 i = 0; i < cEL->size; i++)
+    {
+        free(cEL->edges[i]);
+    }
+    cEL->size = 0;
 }
-void CompleteEdgeListFree(CompleteEdgeList * cel)
+void CompleteEdgeListFree(CompleteEdgeList * cEL)
 {
-    free(cel->edges);
-    cel->edges = NULL;
-    cel->size = 0;
-    cel->capacity = 0;
+    for (uint16 i = 0; i < cEL->size; i++)
+    {
+        free(cEL->edges[i]);
+    }
+    free(cEL->edges);
+    cEL->edges = NULL;
+    cEL->size = 0;
+    cEL->capacity = 0;
 }
 char GetEdgeArcIntersect(Edge edge, Arc arc, float directrixY, Vector2 * intersect)
 {
@@ -437,11 +445,88 @@ typedef struct SweepEvent
     } data;
 } SweepEvent;
 
+// Not dynamic to save on time complexity
 typedef struct EventQueue
 {
     SweepEvent ** events;
-    // TODO make EventQueue 
+    size_t length;
+    size_t capacity;
+    size_t head;
+    size_t tail;
 } EventQueue;
+
+char EventQueuePush(EventQueue * eQ, SweepEvent * event)
+{
+    if (eQ->length >= eQ->capacity)
+    {
+        // Queue full
+        puts("Error: EventQueue full in EventQueuePush, no elements were added");
+        return 0;
+    }
+    
+    eQ->events[eQ->tail] = event;
+    eQ->tail = (eQ->tail + 1) % eQ->capacity;
+    eQ->length++;
+    return 1;
+}
+
+char EventQueueInsert(EventQueue * eQ, SweepEvent * event)
+{
+    EventQueuePush(eQ, event);
+
+    // Bubble up
+    size_t i0 = (eQ->tail + eQ->capacity - 1) % eQ->capacity;
+    size_t i1 = (eQ->tail + eQ->capacity - 2) % eQ->capacity;
+    while (i0 != eQ->head)
+    {
+        if (eQ->events[i0]->yValue < eQ->events[i1]->yValue)
+        {
+            // Swap
+            SweepEvent * temp = eQ->events[i0];
+            eQ->events[i0] = eQ->events[i1];
+            eQ->events[i1] = temp;
+
+            i0 = i1;
+            i1 = (i1 + eQ->capacity - 1) % eQ->capacity;
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
+SweepEvent * EventQueuePeek(EventQueue * eQ)
+{
+    if (eQ->length == 0)
+    {
+        // Queue empty
+        return NULL;
+    }
+
+    return eQ->events[eQ->head];
+}
+
+SweepEvent * EventQueuePop(EventQueue * eQ)
+{
+    if (eQ->length == 0)
+    {
+        // Queue empty
+        return NULL;
+    }
+
+    SweepEvent * event = eQ->events[eQ->head];
+    eQ->head = (eQ->head + 1) % eQ->capacity;
+    eQ->length--;
+    return event;
+}
+
+void EventQueueClear(EventQueue * eQ)
+{
+    eQ->length = 0;
+    eQ->head = 0;
+    eQ->tail = 0;
+}
 
 #pragma endregion
 
@@ -648,7 +733,8 @@ void AddCircleEvent(EventQueue * eQ, BeachLineItem * arc)
     newEvent->data.circleEvent.arc = arc;
     newEvent->data.circleEvent.center = circleEventPoint;
     newEvent->data.circleEvent.valid = 1;
-    // TODO Push to event queue
+    
+    EventQueueInsert(eQ, newEvent);
 
     arc->data.arc.squeezeEvent = newEvent;
 }
@@ -663,7 +749,7 @@ void VerifyLackOfReferences(BeachLineItem * root, BeachLineItem * target)
     VerifyLackOfReferences(root->left, target);
     VerifyLackOfReferences(root->right, target);
 }
-BeachLineItem * BLInsertArc(BeachLineItem * root, SweepEvent event, float directrixY)
+BeachLineItem * BLInsertArc(EventQueue * eQ, BeachLineItem * root, SweepEvent event, float directrixY)
 {
     // Case 0: invalid event
     if (event.type != SEED_EVENT)
@@ -728,13 +814,12 @@ BeachLineItem * BLInsertArc(BeachLineItem * root, SweepEvent event, float direct
     VerifyLackOfReferences(newRoot, arcAbove);
     free(arcAbove);
 
-    // TODO Add eventQueue
-    AddCircleEvent(NULL, splitArcLeft);
-    AddCircleEvent(NULL, splitArcRight);
+    AddCircleEvent(eQ, splitArcLeft);
+    AddCircleEvent(eQ, splitArcRight);
 
     return newRoot;
 }
-BeachLineItem * BLRemoveArc(EventQueue eQ, BeachLineItem * root, CompleteEdgeList * CompleteEdges, SweepEvent event)
+BeachLineItem * BLRemoveArc(EventQueue * eQ, BeachLineItem * root, CompleteEdgeList * completeEdges, SweepEvent event)
 {
     BeachLineItem * arcToRemove = event.data.circleEvent.arc;
 
@@ -752,17 +837,17 @@ BeachLineItem * BLRemoveArc(EventQueue eQ, BeachLineItem * root, CompleteEdgeLis
     edgeB->start = rightEdge->data.edge.start;
     edgeB->end = intersection;
 
-    if (leftEdge->data.edge.infinite)
-    {
-        edgeA->start.y = FLT_MAX;
-    }
-    if (rightEdge->data.edge.infinite)
-    {
-        edgeB->start.y = FLT_MAX;
-    }
+    // if (leftEdge->data.edge.infinite)
+    // {
+    //     edgeA->start.y = FLT_MAX;
+    // }
+    // if (rightEdge->data.edge.infinite)
+    // {
+    //     edgeB->start.y = FLT_MAX;
+    // }
 
-    CompleteEdgeListAdd(CompleteEdges, edgeA);
-    CompleteEdgeListAdd(CompleteEdges, edgeB);
+    CompleteEdgeListAdd(completeEdges, edgeA);
+    CompleteEdgeListAdd(completeEdges, edgeB);
 
     Vector2 adjacentArcOffset = Vector2Subtract(
         rightArc->data.arc.focus,
@@ -770,8 +855,8 @@ BeachLineItem * BLRemoveArc(EventQueue eQ, BeachLineItem * root, CompleteEdgeLis
     );
     // TODO check this edge if facing the correct direction
     Vector2 newEdgeDir = Vector2Normalize((Vector2){
-        adjacentArcOffset.y,
-        -adjacentArcOffset.x
+        -adjacentArcOffset.y,
+        adjacentArcOffset.x
     });
 
     BeachLineItem * newEdge = CreateEdge(intersection, newEdgeDir);
@@ -820,8 +905,8 @@ BeachLineItem * BLRemoveArc(EventQueue eQ, BeachLineItem * root, CompleteEdgeLis
     free(leftEdge);
     free(rightEdge);
 
-    AddCircleEvent(&eQ, leftArc);
-    AddCircleEvent(&eQ, rightArc);
+    // AddCircleEvent(eQ, leftArc);
+    // AddCircleEvent(eQ, rightArc);
     return newRoot;
 }
 #pragma endregion
@@ -989,7 +1074,14 @@ void PrintBinTree(BeachLineItem * root, uint16 depth)
     {
         printf("|");
     }
-    printf("%s\n", root->type == ARC ? "Arc" : "Edge");
+    if (ARC == root->type)
+    {
+        printf("Arc %d\n", root->data.arc.seed + 1);
+    }
+    else
+    {
+        printf("Edge\n");
+    }
 
     PrintBinTree(root->left, depth + 1);
     PrintBinTree(root->right, depth + 1);
