@@ -837,14 +837,14 @@ BeachLineItem * BLRemoveArc(EventQueue * eQ, BeachLineItem * root, CompleteEdgeL
     edgeB->start = rightEdge->data.edge.start;
     edgeB->end = intersection;
 
-    // if (leftEdge->data.edge.infinite)
-    // {
-    //     edgeA->start.y = FLT_MAX;
-    // }
-    // if (rightEdge->data.edge.infinite)
-    // {
-    //     edgeB->start.y = FLT_MAX;
-    // }
+    if (leftEdge->data.edge.infinite)
+    {
+        edgeA->start.y = FLT_MAX;
+    }
+    if (rightEdge->data.edge.infinite)
+    {
+        edgeB->start.y = FLT_MAX;
+    }
 
     CompleteEdgeListAdd(completeEdges, edgeA);
     CompleteEdgeListAdd(completeEdges, edgeB);
@@ -905,8 +905,8 @@ BeachLineItem * BLRemoveArc(EventQueue * eQ, BeachLineItem * root, CompleteEdgeL
     free(leftEdge);
     free(rightEdge);
 
-    // AddCircleEvent(eQ, leftArc);
-    // AddCircleEvent(eQ, rightArc);
+    AddCircleEvent(eQ, leftArc);
+    AddCircleEvent(eQ, rightArc);
     return newRoot;
 }
 #pragma endregion

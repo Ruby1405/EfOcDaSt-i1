@@ -369,6 +369,7 @@ int main ()
 
 		if (IsKeyDown(KEY_A))
 		{
+			float speed = 40.0f;
 			// Advance directrix
 			// Process next event
 			SweepEvent * nextEvent = EventQueuePeek(&eventQueue);
@@ -383,7 +384,7 @@ int main ()
 
 			if (NULL != nextEvent)
 			{
-				if (directrix + GetFrameTime() * 40.0f >= nextEvent->yValue)
+				if (directrix + GetFrameTime() * speed >= nextEvent->yValue)
 				{
 					// handle event
 					directrix = nextEvent->yValue;
@@ -412,7 +413,7 @@ int main ()
 				}
 				else
 				{
-					directrix += GetFrameTime() * 40.0f;
+					directrix += GetFrameTime() * speed;
 				}
 			}
 		}
