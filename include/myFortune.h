@@ -549,7 +549,7 @@ BeachLineItem * CreateEdge(Vector2 start, Vector2 direction)
     newItem->type = EDGE;
     newItem->data.edge.start = start;
     newItem->data.edge.direction = direction;
-    newItem->data.edge.infinite = 1;
+    newItem->data.edge.infinite = 0;
     newItem->parent = NULL;
     newItem->left = NULL;
     newItem->right = NULL;
