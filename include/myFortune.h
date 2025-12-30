@@ -720,7 +720,7 @@ void AddCircleEvent(EventQueue * eQ, BeachLineItem * arc)
 
     if (NULL != arc->data.arc.squeezeEvent)
     {
-        if (circleEventY >= arc->data.arc.squeezeEvent->yValue)
+        if (circleEventY <= arc->data.arc.squeezeEvent->yValue)
         {
             arc->data.arc.squeezeEvent->data.circleEvent.valid = 0;
         }
@@ -853,7 +853,7 @@ BeachLineItem * BLRemoveArc(EventQueue * eQ, BeachLineItem * root, CompleteEdgeL
         rightArc->data.arc.focus,
         leftArc->data.arc.focus
     );
-    // TODO check this edge if facing the correct direction
+    
     Vector2 newEdgeDir = Vector2Normalize((Vector2){
         -adjacentArcOffset.y,
         adjacentArcOffset.x
