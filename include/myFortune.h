@@ -941,7 +941,7 @@ void DrawCompleteEdge(Vector2 start, Vector2 end)
 }
 void DrawEdge(Vector2 start, Vector2 direction, Vector2 minCorner, Vector2 maxCorner)
 {
-    float dist = 1000.0f;
+    float dist = 0.0f;
     if (0 != direction.x)
     {
         float endX = start.x + dist * direction.x;
