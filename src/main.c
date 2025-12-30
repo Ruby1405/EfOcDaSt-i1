@@ -44,8 +44,8 @@ int main ()
 	// ToggleFullscreen();
 
 	// ----------- my stuff ------------
-	const uint16 MAX_SEED_COUNT = 20;
-	uint16 SEED_COUNT = 20;
+	const uint16 MAX_SEED_COUNT = 200;
+	uint16 SEED_COUNT = 200;
 	const float SEED_SPEED = 20.0f;
 	Vector2 seeds[MAX_SEED_COUNT];
 	for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
@@ -356,11 +356,11 @@ int main ()
 			Color col = ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f);
 
 			// Dots
-			// DrawCircleV(seeds[i], 2.0, col);
+			DrawCircleV(seeds[i], 2.0, col);
 
 			// Numbers
-			DrawCircleV(seeds[i], 7.0, BLACK);
-			DrawText(TextFormat("%d", i + 1), (sint32)seeds[i].x - 3, (sint32)seeds[i].y - 5, 10, col);
+			// DrawCircleV(seeds[i], 7.0, BLACK);
+			// DrawText(TextFormat("%d", i + 1), (sint32)seeds[i].x - 3, (sint32)seeds[i].y - 5, 10, col);
 		}
 		
 		DrawFPS(10, 10);
@@ -369,12 +369,12 @@ int main ()
 
 		if (IsKeyDown(KEY_A))
 		{
-			float speed = 40.0f;
+			float speed = 160.0f;
 			// Advance directrix
 			// Process next event
 			SweepEvent * nextEvent = EventQueuePeek(&eventQueue);
 
-			if (NULL != nextEvent && CIRCLE_EVENT == nextEvent->type && !nextEvent->data.circleEvent.valid)
+			while (NULL != nextEvent && CIRCLE_EVENT == nextEvent->type && !nextEvent->data.circleEvent.valid)
 			{
 				// invalid circle event, skip
 				EventQueuePop(&eventQueue);
@@ -422,7 +422,7 @@ int main ()
 			// Jump to next event
 			SweepEvent * nextEvent = EventQueuePeek(&eventQueue);
 
-			if (NULL != nextEvent && CIRCLE_EVENT == nextEvent->type && !nextEvent->data.circleEvent.valid)
+			while (NULL != nextEvent && CIRCLE_EVENT == nextEvent->type && !nextEvent->data.circleEvent.valid)
 			{
 				// invalid circle event, skip
 				EventQueuePop(&eventQueue);
