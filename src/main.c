@@ -44,8 +44,8 @@ int main ()
 	// ToggleFullscreen();
 
 	// ----------- my stuff ------------
-	const uint16 MAX_SEED_COUNT = 200;
-	uint16 SEED_COUNT = 200;
+	const uint16 MAX_SEED_COUNT = 100;
+	uint16 SEED_COUNT = 40;
 	const float SEED_SPEED = 20.0f;
 	Vector2 seeds[MAX_SEED_COUNT];
 	for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
@@ -419,7 +419,7 @@ int main ()
 
 			if (NULL == nextEvent && NULL != beachLineRoot)
 			{
-				directrix = (float)BOARD_HEIGHT;
+				directrix = (float)BOARD_HEIGHT + 2;
 				// Clean unfinished edges
 				BLCleanEdges(
 					beachLineRoot,
@@ -471,7 +471,7 @@ int main ()
 
 			if (NULL == nextEvent && NULL != beachLineRoot)
 			{
-				directrix = (float)BOARD_HEIGHT;
+				directrix = (float)BOARD_HEIGHT + 2;
 				// Clean unfinished edges
 				BLCleanEdges(
 					beachLineRoot,
