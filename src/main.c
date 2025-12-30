@@ -416,6 +416,17 @@ int main ()
 					directrix += GetFrameTime() * speed;
 				}
 			}
+
+			if (NULL == nextEvent && NULL != beachLineRoot)
+			{
+				directrix = (float)BOARD_HEIGHT;
+				// Clean unfinished edges
+				BLCleanEdges(
+					beachLineRoot,
+					&completeEdges
+				);
+				beachLineRoot = NULL;
+			}
 		}
 		if (IsKeyPressed(KEY_S))
 		{
@@ -456,6 +467,17 @@ int main ()
 				}
 				EventQueuePop(&eventQueue);
 				free(nextEvent);
+			}
+
+			if (NULL == nextEvent && NULL != beachLineRoot)
+			{
+				directrix = (float)BOARD_HEIGHT;
+				// Clean unfinished edges
+				BLCleanEdges(
+					beachLineRoot,
+					&completeEdges
+				);
+				beachLineRoot = NULL;
 			}
 		}
 		if (IsKeyPressed(KEY_D))

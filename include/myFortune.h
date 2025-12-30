@@ -909,6 +909,28 @@ BeachLineItem * BLRemoveArc(EventQueue * eQ, BeachLineItem * root, CompleteEdgeL
     AddCircleEvent(eQ, rightArc);
     return newRoot;
 }
+void BLCleanEdges(BeachLineItem * root, CompleteEdgeList * completeEdges)
+{
+    if (NULL == root) return;
+
+    if (EDGE == root->type)
+    {
+        float len = 10000.0f;
+        Vector2 end = {
+            root->data.edge.start.x + len * root->data.edge.direction.x,
+            root->data.edge.start.y + len * root->data.edge.direction.y
+        };
+        CompleteEdge * edge = (CompleteEdge *)malloc(sizeof(CompleteEdge));
+        edge->start = root->data.edge.start;
+        edge->end = end;
+        CompleteEdgeListAdd(completeEdges, edge);
+
+        BLCleanEdges(root->left, completeEdges);
+        BLCleanEdges(root->right, completeEdges);
+    }
+
+    free(root);
+}
 #pragma endregion
 #pragma region DRAW
 void DrawCompleteEdge(Vector2 start, Vector2 end)
