@@ -933,13 +933,13 @@ void BLCleanEdges(BeachLineItem * root, CompleteEdgeList * completeEdges)
 }
 #pragma endregion
 #pragma region DRAW
-void DrawCompleteEdge(Vector2 start, Vector2 end)
+void DrawCompleteEdge(Vector2 start, Vector2 end, Color col)
 {
     Vector2 screenSpaceStart = {start.x, start.y};
     Vector2 screenSpaceEnd = {end.x, end.y};
-    DrawLineV(screenSpaceStart, screenSpaceEnd, VIOLET);
+    DrawLineV(screenSpaceStart, screenSpaceEnd, col);
 }
-void DrawEdge(Vector2 start, Vector2 direction, Vector2 minCorner, Vector2 maxCorner)
+void DrawEdge(Vector2 start, Vector2 direction, Vector2 minCorner, Vector2 maxCorner, Color col)
 {
     float dist = 0.0f;
     if (0 != direction.x)
@@ -964,7 +964,7 @@ void DrawEdge(Vector2 start, Vector2 direction, Vector2 minCorner, Vector2 maxCo
 
     Vector2 screenSpaceStart = {start.x, start.y};
     Vector2 screenSpaceEnd = {end.x, end.y};
-    DrawLineV(screenSpaceStart, screenSpaceEnd, WHITE);
+    DrawLineV(screenSpaceStart, screenSpaceEnd, col);
 }
 void DrawParabola(Vector2 focus, float directrixY, float minX, float maxX, float maxY, uint16 boardWidth, uint16 boardHeight, Color col)
 {
@@ -980,7 +980,7 @@ void DrawParabola(Vector2 focus, float directrixY, float minX, float maxX, float
         Vector2 min = {focus.x - 1.0f, focus.y};
         Vector2 max = {focus.x + 1.0f, maxY};
 
-        DrawEdge((Vector2){focus.x, directrixY}, (Vector2){0.0f, -1.0f}, min, max);
+        DrawEdge((Vector2){focus.x, directrixY}, (Vector2){0.0f, -1.0f}, min, max, col);
     }
 
     if (maxX < minX) return;
@@ -1034,7 +1034,7 @@ void DrawBeachLineItem(BeachLineItem * item, float directrix, float boardWidth, 
         }
 
         Color col = ColorFromHSV(((float)item->data.arc.seed / (float)seedCount) * 360.0f, 1.0f, 1.0f);
-        col.a = 100;
+        col.a = 255;
 
         DrawParabola(item->data.arc.focus, directrix, minX, maxX, maxY, boardWidth, boardHeight, col);
     }
@@ -1066,7 +1066,7 @@ void DrawBeachLineItem(BeachLineItem * item, float directrix, float boardWidth, 
                 maxY = fmaxf(maxX, intersection.y);
             }
         }
-        DrawEdge(item->data.edge.start, item->data.edge.direction, (Vector2){minX, minY}, (Vector2){maxX, maxY});
+        DrawEdge(item->data.edge.start, item->data.edge.direction, (Vector2){minX, minY}, (Vector2){maxX, maxY}, WHITE);
     }
 
     DrawBeachLineItem(item->left, directrix, boardWidth, boardHeight, seedCount);

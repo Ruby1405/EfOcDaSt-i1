@@ -282,7 +282,7 @@ int main ()
 		for (size_t i = 0; i < completeEdges.size; i++)
 		{
 			CompleteEdge edge = *completeEdges.edges[i];
-			DrawLineV(edge.start, edge.end, BLUE);
+			DrawLineV(edge.start, edge.end, DARKGRAY);
 		}
 		
 		DrawBeachLineItem(
@@ -367,6 +367,7 @@ int main ()
 
 		EndDrawing();
 
+		#pragma region SeedMovement
 		if (IsKeyDown(KEY_A))
 		{
 			float speed = 160.0f;
@@ -579,6 +580,7 @@ int main ()
 				);
 			}
 		}
+		#pragma endregion
 
 		// fprintf(timeFile, "%u,%llu\n",
 		// 	SEED_COUNT,
