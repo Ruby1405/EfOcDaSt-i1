@@ -60,7 +60,7 @@ int main ()
 		seedVels[i].y = (float)(GetRandomValue(-2, 2));
 	}
 
-	char manualSeedControl = 0;
+	char manualSeedControl = 1;
 
 	#pragma region PolygonSollution
 	// ------------- polygon sollution --------------
@@ -235,7 +235,7 @@ int main ()
 		#pragma endregion
 
 		BeginDrawing();
-		ClearBackground(BLACK);
+		// ClearBackground(BLACK);
 
 		#pragma region PixelSollution
 		// ------------- pixel sollution --------------
