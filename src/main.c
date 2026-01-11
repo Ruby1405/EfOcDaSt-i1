@@ -29,8 +29,8 @@ int main ()
 	// SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
 
 	// Time profiling file
-	// FILE * timeFile;
-	// timeFile = fopen("output/time_profile.csv", "w");
+	FILE * timeFile;
+	timeFile = fopen("output/fortune.csv", "w");
 
 	// Detect screen size and use that for the window
 	// uint16 BOARD_WIDTH = GetScreenWidth();
@@ -44,8 +44,8 @@ int main ()
 	// ToggleFullscreen();
 
 	// ----------- my stuff ------------
-	const uint16 MAX_SEED_COUNT = 100;
-	uint16 SEED_COUNT = 40;
+	const uint16 MAX_SEED_COUNT = 1000;
+	uint16 SEED_COUNT = 1;
 	const float SEED_SPEED = 20.0f;
 	Vector2 seeds[MAX_SEED_COUNT];
 	for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
@@ -96,15 +96,15 @@ int main ()
 	#pragma endregion
 
 	const uint16 SAMPLES_PER_COUNT = 20;
-	// uint16 sampleCounter = 0;
+	uint16 sampleCounter = 0;
 	
 	while (!WindowShouldClose())
 	{	
-		// SEED_COUNT += (sampleCounter >= SAMPLES_PER_COUNT);
-		// sampleCounter = sampleCounter + 1 - (sampleCounter >= SAMPLES_PER_COUNT) * SAMPLES_PER_COUNT;
-		// if (SEED_COUNT > MAX_SEED_COUNT) break;
+		SEED_COUNT += (sampleCounter >= SAMPLES_PER_COUNT);
+		sampleCounter = sampleCounter + 1 - (sampleCounter >= SAMPLES_PER_COUNT) * SAMPLES_PER_COUNT;
+		if (SEED_COUNT > MAX_SEED_COUNT) break;
 
-		// clock_t startTime = clock();
+		clock_t startTime = clock();
 
 		#pragma region PolygonSollution
 		// ------------- polygon sollution --------------
@@ -418,7 +418,7 @@ int main ()
 		// ----------------------------------------------------------
 		#pragma endregion
 
-		// clock_t endTime = clock();
+		clock_t endTime = clock();
 		
 		// Draw seeds
 		for (uint16 i = 0; i < SEED_COUNT; i++)
@@ -658,16 +658,16 @@ int main ()
 		}
 		#pragma endregion
 
-		// fprintf(timeFile, "%u,%llu\n",
-		// 	SEED_COUNT,
-		// 	(endTime - startTime)
-		// );
+		fprintf(timeFile, "%u,%llu\n",
+			SEED_COUNT,
+			(endTime - startTime)
+		);
 	}
 
 	// destroy the window and cleanup the OpenGL context
 	CloseWindow();
 
-	// fclose(timeFile);
+	fclose(timeFile);
 
 	return 0;
 }
