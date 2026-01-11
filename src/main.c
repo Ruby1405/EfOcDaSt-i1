@@ -91,7 +91,7 @@ int main ()
 		.head = 0,
 		.tail = 0
 	};
-	float directrix = 0;
+	
 	// ----------------------------------------------------------
 	#pragma endregion
 
@@ -211,9 +211,6 @@ int main ()
 
 		#pragma region FortuneSollution
 		// ------------- Fortune's algorithm sollution --------------
-		// Reset data structures
-		// CompleteEdgeListClear(&completeEdges);
-
 		// Sort seeds by y value ascending
 		for (uint16 i = 0; i < SEED_COUNT; i++)
 		{
@@ -231,6 +228,83 @@ int main ()
 				}
 			}
 		}
+
+		// Reset data structures
+		CompleteEdgeListClear(&completeEdges);
+		BLDelete(&beachLineRoot);
+		EventQueueClear(&eventQueue);
+
+		// Add all seeds as seed events
+		for (uint16 i = 0; i < SEED_COUNT; i++)
+		{
+			SweepEvent * seedEvent = (SweepEvent *)malloc(sizeof(SweepEvent));
+			seedEvent->type = SEED_EVENT;
+			seedEvent->data.seedEvent.seedIndex = i;
+			seedEvent->data.seedEvent.position = seeds[i];
+			seedEvent->yValue = seeds[i].y;
+			
+			EventQueueInsert(&eventQueue, seedEvent);
+		}
+
+		// Handle events
+		float directrix = 0;
+		while (eventQueue.length > 0)
+		{
+			SweepEvent * nextEvent = EventQueuePeek(&eventQueue);
+
+			while (NULL != nextEvent && CIRCLE_EVENT == nextEvent->type && !nextEvent->data.circleEvent.valid)
+			{
+				// invalid circle event, skip
+				EventQueuePop(&eventQueue);
+				free(nextEvent);
+				nextEvent = EventQueuePeek(&eventQueue);
+			}
+			
+			if (NULL != nextEvent)
+			{
+				// handle event
+				directrix = nextEvent->yValue;
+				if (SEED_EVENT == nextEvent->type)
+				{
+					// Handle seed event
+					beachLineRoot = BLInsertArc(
+						&eventQueue,
+						beachLineRoot,
+						*nextEvent,
+						directrix
+					);
+				}
+				else if (CIRCLE_EVENT == nextEvent->type)
+				{
+					// Handle circle event
+					beachLineRoot = BLRemoveArc(
+						&eventQueue,
+						beachLineRoot,
+						&completeEdges,
+						*nextEvent
+					);
+				}
+				else
+				{
+					// Unknown event type, happens often apparently
+					EventQueuePop(&eventQueue);
+					continue;
+				}
+				EventQueuePop(&eventQueue);
+				free(nextEvent);
+			}
+		}
+
+		if (NULL != beachLineRoot)
+		{
+			// Clean unfinished edges
+			BLCleanEdges(
+				beachLineRoot,
+				&completeEdges
+			);
+			beachLineRoot = NULL;
+		}
+
 		// ----------------------------------------------------------
 		#pragma endregion
 
@@ -285,61 +359,61 @@ int main ()
 			DrawLineV(edge.start, edge.end, DARKGRAY);
 		}
 		
-		DrawBeachLineItem(
-			beachLineRoot,
-			directrix,
-			BOARD_WIDTH,
-			BOARD_HEIGHT,
-			SEED_COUNT
-		);
+		// DrawBeachLineItem(
+		// 	beachLineRoot,
+		// 	directrix,
+		// 	BOARD_WIDTH,
+		// 	BOARD_HEIGHT,
+		// 	SEED_COUNT
+		// );
 
-		DrawLine(0, directrix, BOARD_WIDTH, directrix, WHITE);
-		DrawText(
-			TextFormat("Directrix: %.2f", directrix),
-			120,
-			(uint16)directrix + 5,
-			10,
-			WHITE
-		);
+		// DrawLine(0, directrix, BOARD_WIDTH, directrix, WHITE);
+		// DrawText(
+		// 	TextFormat("Directrix: %.2f", directrix),
+		// 	120,
+		// 	(uint16)directrix + 5,
+		// 	10,
+		// 	WHITE
+		// );
 
-		// Draw Event Queue
-		DrawText(TextFormat("Event Queue: %d", eventQueue.length), 10, 50, 10, WHITE);
-		for(uint16 i = 0; i < eventQueue.length; i++)
-		{
-			size_t index = (eventQueue.head + i) % eventQueue.capacity;
-			SweepEvent * event = eventQueue.events[index];
-			Color col = (event->type == SEED_EVENT) ? GREEN : (event->data.circleEvent.valid ? BLUE : DARKGRAY);
-			if (event->type == SEED_EVENT)
-			{
-				DrawText(
-					TextFormat(
-						"i%d: S: %d, %.2f",
-						index,
-						event->data.seedEvent.seedIndex + 1,
-						event->yValue
-					),
-					10,
-					70 + i * 15,
-					10,
-					col
-				);
-			}
-			if (event->type == CIRCLE_EVENT)
-			{
-				DrawText(
-					TextFormat(
-						"i%d: C: %d, %.2f",
-						index,
-						event->data.circleEvent.arc->data.arc.seed + 1,
-						event->yValue
-					),
-					10,
-					70 + i * 15,
-					10,
-					col
-				);
-			}
-		}
+		// // Draw Event Queue
+		// DrawText(TextFormat("Event Queue: %d", eventQueue.length), 10, 50, 10, WHITE);
+		// for(uint16 i = 0; i < eventQueue.length; i++)
+		// {
+		// 	size_t index = (eventQueue.head + i) % eventQueue.capacity;
+		// 	SweepEvent * event = eventQueue.events[index];
+		// 	Color col = (event->type == SEED_EVENT) ? GREEN : (event->data.circleEvent.valid ? BLUE : DARKGRAY);
+		// 	if (event->type == SEED_EVENT)
+		// 	{
+		// 		DrawText(
+		// 			TextFormat(
+		// 				"i%d: S: %d, %.2f",
+		// 				index,
+		// 				event->data.seedEvent.seedIndex + 1,
+		// 				event->yValue
+		// 			),
+		// 			10,
+		// 			70 + i * 15,
+		// 			10,
+		// 			col
+		// 		);
+		// 	}
+		// 	if (event->type == CIRCLE_EVENT)
+		// 	{
+		// 		DrawText(
+		// 			TextFormat(
+		// 				"i%d: C: %d, %.2f",
+		// 				index,
+		// 				event->data.circleEvent.arc->data.arc.seed + 1,
+		// 				event->yValue
+		// 			),
+		// 			10,
+		// 			70 + i * 15,
+		// 			10,
+		// 			col
+		// 		);
+		// 	}
+		// }
 
 		// ----------------------------------------------------------
 		#pragma endregion
@@ -367,149 +441,151 @@ int main ()
 
 		EndDrawing();
 
-		#pragma region SeedMovement
-		if (IsKeyDown(KEY_A))
-		{
-			float speed = 160.0f;
-			// Advance directrix
-			// Process next event
-			SweepEvent * nextEvent = EventQueuePeek(&eventQueue);
+		#pragma region FortuneDebug
+		// if (IsKeyDown(KEY_A))
+		// {
+		// 	float speed = 160.0f;
+		// 	// Advance directrix
+		// 	// Process next event
+		// 	SweepEvent * nextEvent = EventQueuePeek(&eventQueue);
 
-			while (NULL != nextEvent && CIRCLE_EVENT == nextEvent->type && !nextEvent->data.circleEvent.valid)
-			{
-				// invalid circle event, skip
-				EventQueuePop(&eventQueue);
-				free(nextEvent);
-				nextEvent = EventQueuePeek(&eventQueue);
-			}
+		// 	while (NULL != nextEvent && CIRCLE_EVENT == nextEvent->type && !nextEvent->data.circleEvent.valid)
+		// 	{
+		// 		// invalid circle event, skip
+		// 		EventQueuePop(&eventQueue);
+		// 		free(nextEvent);
+		// 		nextEvent = EventQueuePeek(&eventQueue);
+		// 	}
 
-			if (NULL != nextEvent)
-			{
-				if (directrix + GetFrameTime() * speed >= nextEvent->yValue)
-				{
-					// handle event
-					directrix = nextEvent->yValue;
-					if (SEED_EVENT == nextEvent->type)
-					{
-						// Handle seed event
-						beachLineRoot = BLInsertArc(
-							&eventQueue,
-							beachLineRoot,
-							*nextEvent,
-							directrix
-						);
-					}
-					else if (CIRCLE_EVENT == nextEvent->type)
-					{
-						// Handle circle event
-						beachLineRoot = BLRemoveArc(
-							&eventQueue,
-							beachLineRoot,
-							&completeEdges,
-							*nextEvent
-						);
-					}
-					EventQueuePop(&eventQueue);
-					free(nextEvent);
-				}
-				else
-				{
-					directrix += GetFrameTime() * speed;
-				}
-			}
+		// 	if (NULL != nextEvent)
+		// 	{
+		// 		if (directrix + GetFrameTime() * speed >= nextEvent->yValue)
+		// 		{
+		// 			// handle event
+		// 			directrix = nextEvent->yValue;
+		// 			if (SEED_EVENT == nextEvent->type)
+		// 			{
+		// 				// Handle seed event
+		// 				beachLineRoot = BLInsertArc(
+		// 					&eventQueue,
+		// 					beachLineRoot,
+		// 					*nextEvent,
+		// 					directrix
+		// 				);
+		// 			}
+		// 			else if (CIRCLE_EVENT == nextEvent->type)
+		// 			{
+		// 				// Handle circle event
+		// 				beachLineRoot = BLRemoveArc(
+		// 					&eventQueue,
+		// 					beachLineRoot,
+		// 					&completeEdges,
+		// 					*nextEvent
+		// 				);
+		// 			}
+		// 			EventQueuePop(&eventQueue);
+		// 			free(nextEvent);
+		// 		}
+		// 		else
+		// 		{
+		// 			directrix += GetFrameTime() * speed;
+		// 		}
+		// 	}
 
-			if (NULL == nextEvent && NULL != beachLineRoot)
-			{
-				directrix = (float)BOARD_HEIGHT + 2;
-				// Clean unfinished edges
-				BLCleanEdges(
-					beachLineRoot,
-					&completeEdges
-				);
-				beachLineRoot = NULL;
-			}
-		}
-		if (IsKeyPressed(KEY_S))
-		{
-			// Jump to next event
-			SweepEvent * nextEvent = EventQueuePeek(&eventQueue);
+		// 	if (NULL == nextEvent && NULL != beachLineRoot)
+		// 	{
+		// 		directrix = (float)BOARD_HEIGHT + 2;
+		// 		// Clean unfinished edges
+		// 		BLCleanEdges(
+		// 			beachLineRoot,
+		// 			&completeEdges
+		// 		);
+		// 		beachLineRoot = NULL;
+		// 	}
+		// }
+		// if (IsKeyPressed(KEY_S))
+		// {
+		// 	// Jump to next event
+		// 	SweepEvent * nextEvent = EventQueuePeek(&eventQueue);
 
-			while (NULL != nextEvent && CIRCLE_EVENT == nextEvent->type && !nextEvent->data.circleEvent.valid)
-			{
-				// invalid circle event, skip
-				EventQueuePop(&eventQueue);
-				free(nextEvent);
-				nextEvent = EventQueuePeek(&eventQueue);
-			}
+		// 	while (NULL != nextEvent && CIRCLE_EVENT == nextEvent->type && !nextEvent->data.circleEvent.valid)
+		// 	{
+		// 		// invalid circle event, skip
+		// 		EventQueuePop(&eventQueue);
+		// 		free(nextEvent);
+		// 		nextEvent = EventQueuePeek(&eventQueue);
+		// 	}
 
-			if (NULL != nextEvent)
-			{
-				// handle event
-				directrix = nextEvent->yValue;
-				if (SEED_EVENT == nextEvent->type)
-				{
-					// Handle seed event
-					beachLineRoot = BLInsertArc(
-						&eventQueue,
-						beachLineRoot,
-						*nextEvent,
-						directrix
-					);
-				}
-				else if (CIRCLE_EVENT == nextEvent->type)
-				{
-					// Handle circle event
-					beachLineRoot = BLRemoveArc(
-						&eventQueue,
-						beachLineRoot,
-						&completeEdges,
-						*nextEvent
-					);
-				}
-				EventQueuePop(&eventQueue);
-				free(nextEvent);
-			}
+		// 	if (NULL != nextEvent)
+		// 	{
+		// 		// handle event
+		// 		directrix = nextEvent->yValue;
+		// 		if (SEED_EVENT == nextEvent->type)
+		// 		{
+		// 			// Handle seed event
+		// 			beachLineRoot = BLInsertArc(
+		// 				&eventQueue,
+		// 				beachLineRoot,
+		// 				*nextEvent,
+		// 				directrix
+		// 			);
+		// 		}
+		// 		else if (CIRCLE_EVENT == nextEvent->type)
+		// 		{
+		// 			// Handle circle event
+		// 			beachLineRoot = BLRemoveArc(
+		// 				&eventQueue,
+		// 				beachLineRoot,
+		// 				&completeEdges,
+		// 				*nextEvent
+		// 			);
+		// 		}
+		// 		EventQueuePop(&eventQueue);
+		// 		free(nextEvent);
+		// 	}
 
-			if (NULL == nextEvent && NULL != beachLineRoot)
-			{
-				directrix = (float)BOARD_HEIGHT + 2;
-				// Clean unfinished edges
-				BLCleanEdges(
-					beachLineRoot,
-					&completeEdges
-				);
-				beachLineRoot = NULL;
-			}
-		}
-		if (IsKeyPressed(KEY_D))
-		{
-			// clear
-			BLDelete(&beachLineRoot);
-			CompleteEdgeListClear(&completeEdges);
-			directrix = 0.0f;
+		// 	if (NULL == nextEvent && NULL != beachLineRoot)
+		// 	{
+		// 		directrix = (float)BOARD_HEIGHT + 2;
+		// 		// Clean unfinished edges
+		// 		BLCleanEdges(
+		// 			beachLineRoot,
+		// 			&completeEdges
+		// 		);
+		// 		beachLineRoot = NULL;
+		// 	}
+		// }
+		// if (IsKeyPressed(KEY_D))
+		// {
+		// 	// clear
+		// 	BLDelete(&beachLineRoot);
+		// 	CompleteEdgeListClear(&completeEdges);
+		// 	directrix = 0.0f;
 
-			// Clear event queue and add all seeds as seed events
-			EventQueueClear(&eventQueue);
-			for (uint16 i = 0; i < SEED_COUNT; i++)
-			{
-				SweepEvent * seedEvent = (SweepEvent *)malloc(sizeof(SweepEvent));
-				seedEvent->type = SEED_EVENT;
-				seedEvent->data.seedEvent.seedIndex = i;
-				seedEvent->data.seedEvent.position = seeds[i];
-				seedEvent->yValue = seeds[i].y;
+		// 	// Clear event queue and add all seeds as seed events
+		// 	EventQueueClear(&eventQueue);
+		// 	for (uint16 i = 0; i < SEED_COUNT; i++)
+		// 	{
+		// 		SweepEvent * seedEvent = (SweepEvent *)malloc(sizeof(SweepEvent));
+		// 		seedEvent->type = SEED_EVENT;
+		// 		seedEvent->data.seedEvent.seedIndex = i;
+		// 		seedEvent->data.seedEvent.position = seeds[i];
+		// 		seedEvent->yValue = seeds[i].y;
 				
-				EventQueueInsert(&eventQueue, seedEvent);
-			}
-		}
-		if (IsKeyPressed(KEY_W))
-		{
-			PrintBinTree(beachLineRoot, 0);
-		}
-		if (IsKeyPressed(KEY_P))
-		{
-			// Pop
-			EventQueuePop(&eventQueue);
-		}
+		// 		EventQueueInsert(&eventQueue, seedEvent);
+		// 	}
+		// }
+		// if (IsKeyPressed(KEY_W))
+		// {
+		// 	PrintBinTree(beachLineRoot, 0);
+		// }
+		// if (IsKeyPressed(KEY_P))
+		// {
+		// 	// Pop
+		// 	EventQueuePop(&eventQueue);
+		// }
+		#pragma endregion
+		#pragma region SeedMovement
 		if (IsKeyPressed(KEY_SPACE))
 		{
 			manualSeedControl = !manualSeedControl;
