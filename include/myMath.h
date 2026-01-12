@@ -22,67 +22,6 @@ float MinFloat(float a, float b)
     return (a * (a <= b)) + (b * (b < a));
 }
 #pragma endregion
-#pragma region FortuneMethods
-
-uint16 Compare(uint16 a, uint16 b){
-    return a - b;
-}
-
-float ParabolicCut(float x1, float y1, float x2, float y2, float ys)
-{
-    if (fabsf(x1 - x2) < FEM && fabsf(y1 - y2) < FEM)
-    {
-        // Identical points are not allowed
-        puts("Error: Identical points in ParabolicCut");
-        exit(1);
-    }
-
-    if (fabsf(y1 - ys) < FEM && fabsf(y2 - ys) < FEM)
-        return (x1 + x2) * 0.5f;
-
-    if (fabsf(y1 - ys) < FEM) return x1;
-    if (fabsf(y2 - ys) < FEM) return x2;
-
-    float a1 = 1.0f / (2.0f * (y1 - ys));
-    float a2 = 1.0f / (2.0f * (y2 - ys));
-
-    if (fabsf(a1 - a2) < FEM) return (x1 + x2) * 0.5f;
-
-    float xs1 = 
-        0.5/(2*a1-2*a2) * (
-            4*a1*x1-4*a2*x2+2 * sqrt(
-                -8*a1*x1*a2*x2-2*a1*y1+2*a1*y2+4*a1*a2*x2*x2+2*a2*y1+4*a2*a1*x1*x1-2*a2*y2));
-
-    float xs2 =
-        0.5/(2*a1-2*a2) * (
-            4*a1*x1-4*a2*x2-2 * sqrt(
-                -8*a1*x1*a2*x2-2*a1*y1+2*a1*y2+4*a1*a2*x2*x2+2*a2*y1+4*a2*a1*x1*x1-2*a2*y2));
-	
-    if (xs1 > xs2)
-    {
-        float temp = xs1;
-        xs1 = xs2;
-        xs2 = temp;
-    }
-    if (y1 >= y2)
-        return xs2;
-    return xs1;
-}
-
-sint16 CCW(Vector2 a, Vector2 b, Vector2 c, char plusOneOnCollinear)
-{
-    sint32 x1, y1, x2, y2;
-    x1 = (sint32)(b.x - a.x);
-    y1 = (sint32)(b.y - a.y);
-    x2 = (sint32)(c.x - a.x);
-    y2 = (sint32)(c.y - a.y);
-    if (x1 * y2 > y1 * x2) return 1;
-    if (x1 * y2 < y1 * x2) return -1;
-    if (x1 * x2 < 0 || y1 * y2 < 0) return -1;
-    if (x1*x1 + y1*y1 < x2*x2 + y2*y2 && plusOneOnCollinear) return 1;
-    return 0;
-}
-#pragma endregion
 
 #pragma region CollisionMethods
 /// @brief Checks for intersection between two infinite lines defined by a point and a direction vector each.
