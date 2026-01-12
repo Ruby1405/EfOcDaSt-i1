@@ -18,7 +18,6 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 
 #include "definitions.h"
 #include "polygon.h"
-// #include "fortune.h"
 #include "myFortune.h"
 #include "priorityQueue.h"
 #include "myMath.h"
