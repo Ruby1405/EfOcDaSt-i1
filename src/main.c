@@ -26,7 +26,7 @@ int main ()
 
 	// Time profiling file
 	FILE * timeFile;
-	timeFile = fopen("output/fortune.csv", "w");
+	timeFile = fopen("output/pixel.csv", "w");
 
 	// Detect screen size and use that for the window
 	// uint16 BOARD_WIDTH = GetScreenWidth();
