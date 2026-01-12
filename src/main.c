@@ -17,10 +17,6 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 #include "resource_dir.h"	// utility header for SearchAndSetResourceDir
 
 #include "definitions.h"
-#include "polygon.h"
-// #include "fortune.h"
-#include "myFortune.h"
-#include "priorityQueue.h"
 #include "myMath.h"
 
 int main ()
@@ -62,39 +58,6 @@ int main ()
 
 	char manualSeedControl = 0;
 
-	#pragma region PolygonSollution
-	// ------------- polygon sollution --------------
-	// Polygon polygons[MAX_SEED_COUNT];
-
-	// for (uint16 i = 0; i < MAX_SEED_COUNT; i++)
-	// {
-	// 	PolygonInit(&polygons[i]);
-	// }
-
-	// Polygon workagon0;
-	// PolygonInit(&workagon0);
-	// Polygon workagon1;
-	// PolygonInit(&workagon1);
-	// ---------------------------------------------
-	#pragma endregion
-
-	#pragma region FortuneSollution
-	// ------------- Fortune's algorithm sollution --------------
-	BeachLineItem * beachLineRoot = NULL;
-	CompleteEdgeList completeEdges;
-	CompleteEdgeListInit(&completeEdges, 256);
-	SweepEvent * events[MAX_SEED_COUNT * 2]; 
-	EventQueue eventQueue = {
-		.events = events,
-		.capacity = MAX_SEED_COUNT * 2,
-		.length = 0,
-		.head = 0,
-		.tail = 0
-	};
-	
-	// ----------------------------------------------------------
-	#pragma endregion
-
 	const uint16 SAMPLES_PER_COUNT = 20;
 	uint16 sampleCounter = 0;
 	
@@ -106,316 +69,34 @@ int main ()
 
 		clock_t startTime = clock();
 
-		#pragma region PolygonSollution
-		// ------------- polygon sollution --------------
-		// for (uint16 s0 = 0; s0 < SEED_COUNT; s0++)
-		// {
-
-		// 	PolygonClear(&polygons[s0]);
-		// 	PolygonAddPoint(&polygons[s0], (Vector2){0,0});
-		// 	PolygonAddPoint(&polygons[s0], (Vector2){0,(float)BOARD_HEIGHT});
-		// 	PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH,(float)BOARD_HEIGHT});
-		// 	PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH,0});
-
-		// 	// PolygonAddPoint(&polygons[s0], (Vector2){3,3});
-		// 	// PolygonAddPoint(&polygons[s0], (Vector2){3,(float)BOARD_HEIGHT - 3});
-		// 	// PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH - 3,(float)BOARD_HEIGHT - 3});
-		// 	// PolygonAddPoint(&polygons[s0], (Vector2){(float)BOARD_WIDTH - 3, 3});
-
-		// 	for (uint16 s1 = 0; s1 < SEED_COUNT; s1++)
-		// 	{
-		// 		if (s0 == s1) continue;
-
-				
-		// 		Vector2 midpoint = Vector2Scale(Vector2Add(seeds[s0], seeds[s1]), 0.5f);
-		// 		Vector2 disectV = {seeds[s0].y - seeds[s1].y, - seeds[s0].x + seeds[s1].x};
-				
-		// 		PolygonClear(&workagon0);
-				
-		// 		uint16 stage = 0;
-		// 		for (uint16 v = 0; v < polygons[s0].pointsCount; v++)
-		// 		{
-		// 			switch (stage)
-		// 			{
-		// 				case 0:
-		// 				{
-		// 					Vector2 v0 = polygons[s0].points[v];
-		// 					Vector2 v1 = polygons[s0].points[(v + 1) % polygons[s0].pointsCount];
-		// 					Vector2 intersect;
-
-		// 					PolygonAddPoint(&workagon0, v0);
-							
-		// 					if (CollisionLineLineSegmentPVPP(midpoint, disectV, v0, v1, &intersect))
-		// 					{
-
-		// 						stage++;
-		// 						PolygonAddPoint(&workagon0, intersect);
-		// 						PolygonClear(&workagon1);
-		// 						PolygonAddPoint(&workagon1, intersect);
-		// 					}
-		// 					break;
-		// 				}
-		// 			case 1:
-		// 				{
-		// 					Vector2 v0 = polygons[s0].points[v];
-		// 					Vector2 v1 = polygons[s0].points[(v + 1) % polygons[s0].pointsCount];
-
-		// 					PolygonAddPoint(&workagon1, v0);
-
-		// 					Vector2 intersect;
-		// 					if (CollisionLineLineSegmentPVPP(midpoint, disectV, v0, v1, &intersect))
-		// 					{
-		// 						stage++;
-		// 						PolygonAddPoint(&workagon0, intersect);
-		// 						PolygonAddPoint(&workagon1, intersect);
-		// 					}
-		// 					break;
-		// 				}
-		// 			case 2:
-		// 				{
-		// 					PolygonAddPoint(&workagon0, polygons[s0].points[v]);
-		// 					break;
-		// 				}
-		// 			default:
-		// 				break;
-		// 			}
-		// 		}
-		// 		if (CheckCollisionPointPoly(seeds[s0], workagon0.points, workagon0.pointsCount))
-		// 		{
-		// 			Vector2 * temppoints = polygons[s0].points;
-		// 			uint16 temppointsCount = polygons[s0].pointsCount;
-		// 			uint16 temppointsCap = polygons[s0].pointsCap;
-		// 			polygons[s0].points = workagon0.points;
-		// 			polygons[s0].pointsCount = workagon0.pointsCount;
-		// 			polygons[s0].pointsCap = workagon0.pointsCap;
-		// 			workagon0.points = temppoints;
-		// 			workagon0.pointsCount = temppointsCount;
-		// 			workagon0.pointsCap = temppointsCap;
-		// 		}
-		// 		else
-		// 		{
-		// 			Vector2 * temppoints = polygons[s0].points;
-		// 			uint16 temppointsCount = polygons[s0].pointsCount;
-		// 			uint16 temppointsCap = polygons[s0].pointsCap;
-		// 			polygons[s0].points = workagon1.points;
-		// 			polygons[s0].pointsCount = workagon1.pointsCount;
-		// 			polygons[s0].pointsCap = workagon1.pointsCap;
-		// 			workagon1.points = temppoints;
-		// 			workagon1.pointsCount = temppointsCount;
-		// 			workagon1.pointsCap = temppointsCap;
-		// 		}
-		// 	}
-		// }
-		// ---------------------------------------------
-		#pragma endregion
-
-		#pragma region FortuneSollution
-		// ------------- Fortune's algorithm sollution --------------
-		// Sort seeds by y value ascending
-		for (uint16 i = 0; i < SEED_COUNT; i++)
-		{
-			for (uint16 ii = i; ii < SEED_COUNT - 1; ii++)
-			{
-				if (seeds[ii].y > seeds[ii + 1].y)
-				{
-					Vector2 temp = seeds[ii];
-					seeds[ii] = seeds[ii + 1];
-					seeds[ii + 1] = temp;
-
-					Vector2 tempV = seedVels[ii];
-					seedVels[ii] = seedVels[ii + 1];
-					seedVels[ii + 1] = tempV;
-				}
-			}
-		}
-
-		// Reset data structures
-		CompleteEdgeListClear(&completeEdges);
-		BLDelete(&beachLineRoot);
-		EventQueueClear(&eventQueue);
-
-		// Add all seeds as seed events
-		for (uint16 i = 0; i < SEED_COUNT; i++)
-		{
-			SweepEvent * seedEvent = (SweepEvent *)malloc(sizeof(SweepEvent));
-			seedEvent->type = SEED_EVENT;
-			seedEvent->data.seedEvent.seedIndex = i;
-			seedEvent->data.seedEvent.position = seeds[i];
-			seedEvent->yValue = seeds[i].y;
-			
-			EventQueueInsert(&eventQueue, seedEvent);
-		}
-
-		// Handle events
-		float directrix = 0;
-		while (eventQueue.length > 0)
-		{
-			SweepEvent * nextEvent = EventQueuePeek(&eventQueue);
-
-			while (NULL != nextEvent && CIRCLE_EVENT == nextEvent->type && !nextEvent->data.circleEvent.valid)
-			{
-				// invalid circle event, skip
-				EventQueuePop(&eventQueue);
-				free(nextEvent);
-				nextEvent = EventQueuePeek(&eventQueue);
-			}
-			
-			if (NULL != nextEvent)
-			{
-				// handle event
-				directrix = nextEvent->yValue;
-				if (SEED_EVENT == nextEvent->type)
-				{
-					// Handle seed event
-					beachLineRoot = BLInsertArc(
-						&eventQueue,
-						beachLineRoot,
-						*nextEvent,
-						directrix
-					);
-				}
-				else if (CIRCLE_EVENT == nextEvent->type)
-				{
-					// Handle circle event
-					beachLineRoot = BLRemoveArc(
-						&eventQueue,
-						beachLineRoot,
-						&completeEdges,
-						*nextEvent
-					);
-				}
-				else
-				{
-					// Unknown event type, happens often apparently
-					EventQueuePop(&eventQueue);
-					continue;
-				}
-				EventQueuePop(&eventQueue);
-				free(nextEvent);
-			}
-		}
-
-		if (NULL != beachLineRoot)
-		{
-			// Clean unfinished edges
-			BLCleanEdges(
-				beachLineRoot,
-				&completeEdges
-			);
-			beachLineRoot = NULL;
-		}
-
-		// ----------------------------------------------------------
-		#pragma endregion
-
 		BeginDrawing();
 		ClearBackground(BLACK);
 
 		#pragma region PixelSollution
 		// ------------- pixel sollution --------------
 		// Pixel by pixel draw voronoi
-		// for (uint16 y = 0; y < BOARD_HEIGHT; y++)
-		// {
-		// 	for (uint16 x = 0; x < BOARD_WIDTH; x++)
-		// 	{
-		// 		uint16 closestSeed = 0;
-		// 		float closestDist = (BOARD_WIDTH + BOARD_HEIGHT) * (BOARD_WIDTH + BOARD_HEIGHT);
-		// 		for (uint16 i = 0; i < SEED_COUNT; i++)
-		// 		{
-		// 			float dist = Vector2DistanceSqr((Vector2){ (float)x, (float)y }, seeds[i]);
-		// 			if (dist < closestDist)
-		// 			{
-		// 				closestDist = dist;
-		// 				closestSeed = i;
-		// 			}
-		// 		}
-		// 		float hue = (float)closestSeed / (float)SEED_COUNT;
-		// 		Color col = ColorFromHSV(hue * 360.0f, 1.0f, 1.0f);
-		// 		col.a = 100;
-		// 		DrawPixel(x, y, col);
-		// 	}
-		// }
-		// ---------------------------------------------
-		#pragma endregion
-
-		#pragma region PolygonSollution
-		// ------------- polygon sollution --------------
-		// for (uint16 i = 0; i < SEED_COUNT; i++)
-		// {
-		// 	Color col = ColorFromHSV(((float)i / (float)SEED_COUNT) * 360.0f, 1.0f, 1.0f);
-		// 	col.a = 100;
-		// 	PolygonDraw(&polygons[i], col);
-		// 	// PolygonDrawLines(&polygons[i], col);
-		// }
-		// ----------------------------------------------
-		#pragma endregion
-
-		#pragma region FortuneSollution
-		// ------------- Fortune's algorithm sollution --------------
-
-		for (size_t i = 0; i < completeEdges.size; i++)
+		for (uint16 y = 0; y < BOARD_HEIGHT; y++)
 		{
-			CompleteEdge edge = *completeEdges.edges[i];
-			DrawLineV(edge.start, edge.end, DARKGRAY);
+			for (uint16 x = 0; x < BOARD_WIDTH; x++)
+			{
+				uint16 closestSeed = 0;
+				float closestDist = (BOARD_WIDTH + BOARD_HEIGHT) * (BOARD_WIDTH + BOARD_HEIGHT);
+				for (uint16 i = 0; i < SEED_COUNT; i++)
+				{
+					float dist = Vector2DistanceSqr((Vector2){ (float)x, (float)y }, seeds[i]);
+					if (dist < closestDist)
+					{
+						closestDist = dist;
+						closestSeed = i;
+					}
+				}
+				float hue = (float)closestSeed / (float)SEED_COUNT;
+				Color col = ColorFromHSV(hue * 360.0f, 1.0f, 1.0f);
+				col.a = 100;
+				DrawPixel(x, y, col);
+			}
 		}
-		
-		// DrawBeachLineItem(
-		// 	beachLineRoot,
-		// 	directrix,
-		// 	BOARD_WIDTH,
-		// 	BOARD_HEIGHT,
-		// 	SEED_COUNT
-		// );
-
-		// DrawLine(0, directrix, BOARD_WIDTH, directrix, WHITE);
-		// DrawText(
-		// 	TextFormat("Directrix: %.2f", directrix),
-		// 	120,
-		// 	(uint16)directrix + 5,
-		// 	10,
-		// 	WHITE
-		// );
-
-		// // Draw Event Queue
-		// DrawText(TextFormat("Event Queue: %d", eventQueue.length), 10, 50, 10, WHITE);
-		// for(uint16 i = 0; i < eventQueue.length; i++)
-		// {
-		// 	size_t index = (eventQueue.head + i) % eventQueue.capacity;
-		// 	SweepEvent * event = eventQueue.events[index];
-		// 	Color col = (event->type == SEED_EVENT) ? GREEN : (event->data.circleEvent.valid ? BLUE : DARKGRAY);
-		// 	if (event->type == SEED_EVENT)
-		// 	{
-		// 		DrawText(
-		// 			TextFormat(
-		// 				"i%d: S: %d, %.2f",
-		// 				index,
-		// 				event->data.seedEvent.seedIndex + 1,
-		// 				event->yValue
-		// 			),
-		// 			10,
-		// 			70 + i * 15,
-		// 			10,
-		// 			col
-		// 		);
-		// 	}
-		// 	if (event->type == CIRCLE_EVENT)
-		// 	{
-		// 		DrawText(
-		// 			TextFormat(
-		// 				"i%d: C: %d, %.2f",
-		// 				index,
-		// 				event->data.circleEvent.arc->data.arc.seed + 1,
-		// 				event->yValue
-		// 			),
-		// 			10,
-		// 			70 + i * 15,
-		// 			10,
-		// 			col
-		// 		);
-		// 	}
-		// }
-
-		// ----------------------------------------------------------
+		// ---------------------------------------------
 		#pragma endregion
 
 		clock_t endTime = clock();
@@ -441,150 +122,6 @@ int main ()
 
 		EndDrawing();
 
-		#pragma region FortuneDebug
-		// if (IsKeyDown(KEY_A))
-		// {
-		// 	float speed = 160.0f;
-		// 	// Advance directrix
-		// 	// Process next event
-		// 	SweepEvent * nextEvent = EventQueuePeek(&eventQueue);
-
-		// 	while (NULL != nextEvent && CIRCLE_EVENT == nextEvent->type && !nextEvent->data.circleEvent.valid)
-		// 	{
-		// 		// invalid circle event, skip
-		// 		EventQueuePop(&eventQueue);
-		// 		free(nextEvent);
-		// 		nextEvent = EventQueuePeek(&eventQueue);
-		// 	}
-
-		// 	if (NULL != nextEvent)
-		// 	{
-		// 		if (directrix + GetFrameTime() * speed >= nextEvent->yValue)
-		// 		{
-		// 			// handle event
-		// 			directrix = nextEvent->yValue;
-		// 			if (SEED_EVENT == nextEvent->type)
-		// 			{
-		// 				// Handle seed event
-		// 				beachLineRoot = BLInsertArc(
-		// 					&eventQueue,
-		// 					beachLineRoot,
-		// 					*nextEvent,
-		// 					directrix
-		// 				);
-		// 			}
-		// 			else if (CIRCLE_EVENT == nextEvent->type)
-		// 			{
-		// 				// Handle circle event
-		// 				beachLineRoot = BLRemoveArc(
-		// 					&eventQueue,
-		// 					beachLineRoot,
-		// 					&completeEdges,
-		// 					*nextEvent
-		// 				);
-		// 			}
-		// 			EventQueuePop(&eventQueue);
-		// 			free(nextEvent);
-		// 		}
-		// 		else
-		// 		{
-		// 			directrix += GetFrameTime() * speed;
-		// 		}
-		// 	}
-
-		// 	if (NULL == nextEvent && NULL != beachLineRoot)
-		// 	{
-		// 		directrix = (float)BOARD_HEIGHT + 2;
-		// 		// Clean unfinished edges
-		// 		BLCleanEdges(
-		// 			beachLineRoot,
-		// 			&completeEdges
-		// 		);
-		// 		beachLineRoot = NULL;
-		// 	}
-		// }
-		// if (IsKeyPressed(KEY_S))
-		// {
-		// 	// Jump to next event
-		// 	SweepEvent * nextEvent = EventQueuePeek(&eventQueue);
-
-		// 	while (NULL != nextEvent && CIRCLE_EVENT == nextEvent->type && !nextEvent->data.circleEvent.valid)
-		// 	{
-		// 		// invalid circle event, skip
-		// 		EventQueuePop(&eventQueue);
-		// 		free(nextEvent);
-		// 		nextEvent = EventQueuePeek(&eventQueue);
-		// 	}
-
-		// 	if (NULL != nextEvent)
-		// 	{
-		// 		// handle event
-		// 		directrix = nextEvent->yValue;
-		// 		if (SEED_EVENT == nextEvent->type)
-		// 		{
-		// 			// Handle seed event
-		// 			beachLineRoot = BLInsertArc(
-		// 				&eventQueue,
-		// 				beachLineRoot,
-		// 				*nextEvent,
-		// 				directrix
-		// 			);
-		// 		}
-		// 		else if (CIRCLE_EVENT == nextEvent->type)
-		// 		{
-		// 			// Handle circle event
-		// 			beachLineRoot = BLRemoveArc(
-		// 				&eventQueue,
-		// 				beachLineRoot,
-		// 				&completeEdges,
-		// 				*nextEvent
-		// 			);
-		// 		}
-		// 		EventQueuePop(&eventQueue);
-		// 		free(nextEvent);
-		// 	}
-
-		// 	if (NULL == nextEvent && NULL != beachLineRoot)
-		// 	{
-		// 		directrix = (float)BOARD_HEIGHT + 2;
-		// 		// Clean unfinished edges
-		// 		BLCleanEdges(
-		// 			beachLineRoot,
-		// 			&completeEdges
-		// 		);
-		// 		beachLineRoot = NULL;
-		// 	}
-		// }
-		// if (IsKeyPressed(KEY_D))
-		// {
-		// 	// clear
-		// 	BLDelete(&beachLineRoot);
-		// 	CompleteEdgeListClear(&completeEdges);
-		// 	directrix = 0.0f;
-
-		// 	// Clear event queue and add all seeds as seed events
-		// 	EventQueueClear(&eventQueue);
-		// 	for (uint16 i = 0; i < SEED_COUNT; i++)
-		// 	{
-		// 		SweepEvent * seedEvent = (SweepEvent *)malloc(sizeof(SweepEvent));
-		// 		seedEvent->type = SEED_EVENT;
-		// 		seedEvent->data.seedEvent.seedIndex = i;
-		// 		seedEvent->data.seedEvent.position = seeds[i];
-		// 		seedEvent->yValue = seeds[i].y;
-				
-		// 		EventQueueInsert(&eventQueue, seedEvent);
-		// 	}
-		// }
-		// if (IsKeyPressed(KEY_W))
-		// {
-		// 	PrintBinTree(beachLineRoot, 0);
-		// }
-		// if (IsKeyPressed(KEY_P))
-		// {
-		// 	// Pop
-		// 	EventQueuePop(&eventQueue);
-		// }
-		#pragma endregion
 		#pragma region SeedMovement
 		if (IsKeyPressed(KEY_SPACE))
 		{
