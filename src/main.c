@@ -29,7 +29,7 @@ int main ()
 
 	// Time profiling file
 	FILE * timeFile;
-	timeFile = fopen("output/fortune.csv", "w");
+	timeFile = fopen("output/justFortune.csv", "w");
 
 	// Detect screen size and use that for the window
 	// uint16 BOARD_WIDTH = GetScreenWidth();
@@ -87,8 +87,7 @@ int main ()
 		sampleCounter = sampleCounter + 1 - (sampleCounter >= SAMPLES_PER_COUNT) * SAMPLES_PER_COUNT;
 		if (SEED_COUNT > MAX_SEED_COUNT) break;
 
-		clock_t startTime = clock();
-
+		
 		#pragma region FortuneSollution
 		// ------------- Fortune's algorithm sollution --------------
 		// Sort seeds by y value ascending
@@ -101,13 +100,15 @@ int main ()
 					Vector2 temp = seeds[ii];
 					seeds[ii] = seeds[ii + 1];
 					seeds[ii + 1] = temp;
-
+					
 					Vector2 tempV = seedVels[ii];
 					seedVels[ii] = seedVels[ii + 1];
 					seedVels[ii + 1] = tempV;
 				}
 			}
 		}
+		
+		clock_t startTime = clock();
 
 		// Reset data structures
 		CompleteEdgeListClear(&completeEdges);
