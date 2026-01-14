@@ -6,13 +6,10 @@
 #include "raylib.h"
 #include "raymath.h"
 
-#include "myMath.h"
+#include "definitions.h"
 
 int main ()
-{
-	// Tell the window to use vsync and work on high DPI displays
-	// SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
-
+{ 
 	// Time profiling file
 	FILE * timeFile;
 	timeFile = fopen("output/pixel.csv", "w");
